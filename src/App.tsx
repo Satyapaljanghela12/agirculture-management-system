@@ -41,10 +41,12 @@ function AppContent() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
       <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-      <main className="flex-1 overflow-auto">
-        {renderActiveSection()}
+      <main className="flex-1 overflow-auto scroll-smooth">
+        <div className="fade-in">
+          {renderActiveSection()}
+        </div>
       </main>
     </div>
   );
