@@ -5,7 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CropManagement from './components/CropManagement';
 import FieldManagement from './components/FieldManagement';
-import WeatherMonitoring from './components/WeatherMonitoring';
+import WeatherDashboard from './components/WeatherDashboard';
 import EquipmentManagement from './components/EquipmentManagement';
 import FinanceManagement from './components/FinanceManagement';
 import TaskManagement from './components/TaskManagement';
@@ -24,7 +24,7 @@ function AppContent() {
       case 'fields':
         return <FieldManagement />;
       case 'weather':
-        return <WeatherMonitoring />;
+        return <WeatherDashboard />;
       case 'equipment':
         return <EquipmentManagement />;
       case 'finance':

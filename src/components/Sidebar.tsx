@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
     <div className="w-80 bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white h-screen flex flex-col shadow-2xl">
       {/* Header */}
       <div className="p-6 border-b border-green-700/50">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <div className="p-2 bg-green-600 rounded-xl shadow-lg">
             <Sprout className="w-8 h-8 text-white" />
           </div>

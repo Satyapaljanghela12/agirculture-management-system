@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import axios from 'axios';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import cropRoutes from './routes/crops.js';
@@ -35,9 +36,79 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/equipment', equipmentRoutes);
 app.use('/api/finance', financeRoutes);
 
+// Weather API Routes
+app.get('/api/weather', async (req, res) => {
+  try {
+    const { city } = req.query;
+    if (!city) {
+      return res.status(400).json({ error: 'City parameter is required' });
+    }
+
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`
+    );
+    
+    res.json({
+      status: 'success',
+      data: response.data
+    });
+  } catch (error) {
+    console.error('Weather API error:', error);
+    if (error.response) {
+      res.status(error.response.status).json({ 
+        error: 'Failed to fetch weather data',
+        details: error.response.data 
+      });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
+app.get('/api/weather/forecast', async (req, res) => {
+  try {
+    const { city } = req.query;
+    if (!city) {
+      return res.status(400).json({ error: 'City parameter is required' });
+    }
+
+    const response = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`
+    );
+    
+    res.json({
+      status: 'success',
+      data: response.data
+    });
+  } catch (error) {
+    console.error('Forecast API error:', error);
+    if (error.response) {
+      res.status(error.response.status).json({ 
+        error: 'Failed to fetch forecast data',
+        details: error.response.data 
+      });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Agriculture Management API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Agriculture Management API is running',
+    services: {
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      weather_api: process.env.OPENWEATHERMAP_API_KEY ? 'configured' : 'not configured'
+    }
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
 });
 
 app.listen(PORT, () => {
