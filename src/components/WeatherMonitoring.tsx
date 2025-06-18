@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Cloud,
   Sun,
@@ -9,7 +9,8 @@ import {
   Eye,
   TrendingUp,
   TrendingDown,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 
 interface WeatherData {
@@ -23,6 +24,7 @@ interface WeatherData {
     uvIndex: number;
     condition: string;
     icon: string;
+    lastUpdated: string;
   };
   forecast: {
     date: string;
@@ -43,7 +45,7 @@ interface WeatherData {
 }
 
 const WeatherMonitoring: React.FC = () => {
-  const [weatherData] = useState<WeatherData>({
+  const [weatherData, setWeatherData] = useState<WeatherData>({
     current: {
       temperature: 24,
       humidity: 68,
@@ -53,7 +55,8 @@ const WeatherMonitoring: React.FC = () => {
       visibility: 10,
       uvIndex: 6,
       condition: 'Partly Cloudy',
-      icon: 'partly-cloudy'
+      icon: 'partly-cloudy',
+      lastUpdated: new Date().toISOString()
     },
     forecast: [
       {
@@ -117,6 +120,50 @@ const WeatherMonitoring: React.FC = () => {
     ]
   });
 
+  const [loading, setLoading] = useState(false);
+
+  // Simulate real-time weather updates
+  useEffect(() => {
+    const updateWeather = () => {
+      setWeatherData(prev => ({
+        ...prev,
+        current: {
+          ...prev.current,
+          temperature: Math.round(20 + Math.random() * 10), // 20-30°C
+          humidity: Math.round(50 + Math.random() * 30), // 50-80%
+          windSpeed: Math.round(5 + Math.random() * 15), // 5-20 km/h
+          pressure: Math.round(1000 + Math.random() * 30), // 1000-1030 hPa
+          lastUpdated: new Date().toISOString()
+        }
+      }));
+    };
+
+    // Update weather every 30 seconds for demo
+    const interval = setInterval(updateWeather, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const refreshWeather = async () => {
+    setLoading(true);
+    
+    // Simulate API call delay
+    setTimeout(() => {
+      setWeatherData(prev => ({
+        ...prev,
+        current: {
+          ...prev.current,
+          temperature: Math.round(20 + Math.random() * 10),
+          humidity: Math.round(50 + Math.random() * 30),
+          windSpeed: Math.round(5 + Math.random() * 15),
+          pressure: Math.round(1000 + Math.random() * 30),
+          lastUpdated: new Date().toISOString()
+        }
+      }));
+      setLoading(false);
+    }, 1000);
+  };
+
   const getWeatherIcon = (condition: string) => {
     switch (condition.toLowerCase()) {
       case 'sunny':
@@ -159,11 +206,23 @@ const WeatherMonitoring: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Weather Monitoring</h1>
-          <p className="text-gray-600 mt-1">Current conditions and forecast for your farm</p>
+          <p className="text-gray-600 mt-1">Real-time conditions and forecast for your farm</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Last updated</p>
-          <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleTimeString()}</p>
+        <div className="flex items-center space-x-4">
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Last updated</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {new Date(weatherData.current.lastUpdated).toLocaleTimeString()}
+            </p>
+          </div>
+          <button
+            onClick={refreshWeather}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
 
@@ -193,7 +252,10 @@ const WeatherMonitoring: React.FC = () => {
             <h2 className="text-2xl font-bold">Current Weather</h2>
             <p className="text-blue-100">Real-time conditions</p>
           </div>
-          {getWeatherIcon(weatherData.current.icon)}
+          <div className="flex items-center space-x-2">
+            {getWeatherIcon(weatherData.current.icon)}
+            {loading && <RefreshCw className="w-6 h-6 animate-spin" />}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
