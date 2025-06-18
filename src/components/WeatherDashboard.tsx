@@ -44,7 +44,11 @@ interface WeatherData {
   }[];
 }
 
+<<<<<<< HEAD:src/components/WeatherDashboard.tsx
 const WeatherDashboard: React.FC = () => {
+=======
+const WeatherMonitoring: React.FC = () => {
+>>>>>>> 80a65151a41e59d800a20e84bdf07b61ee91424e:src/components/WeatherMonitoring.tsx
   const [weatherData, setWeatherData] = useState<WeatherData>({
     current: {
       temperature: 24,
