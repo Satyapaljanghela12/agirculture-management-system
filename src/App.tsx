@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import AuthWrapper from './components/auth/AuthWrapper';
 import Sidebar from './components/Sidebar';
@@ -11,12 +11,40 @@ import FinanceManagement from './components/FinanceManagement';
 import TaskManagement from './components/TaskManagement';
 import InventoryManagement from './components/InventoryManagement';
 import Reports from './components/Reports';
+import Settings from './components/Settings';
 import Chatbot from './components/Chatbot';
 import { MessageCircle } from 'lucide-react';
 
 function AppContent() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+
+  useEffect(() => {
+    // Listen for navigation events from dashboard quick actions
+    const handleNavigation = (event: any) => {
+      if (event.type === 'navigateToInventory') {
+        setActiveSection('inventory');
+      } else if (event.type === 'navigateToSettings') {
+        setActiveSection('settings');
+      } else if (event.type === 'openAddCropModal') {
+        setActiveSection('crops');
+        // Trigger add crop modal in crop management
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('openCropModal'));
+        }, 100);
+      }
+    };
+
+    window.addEventListener('navigateToInventory', handleNavigation);
+    window.addEventListener('navigateToSettings', handleNavigation);
+    window.addEventListener('openAddCropModal', handleNavigation);
+
+    return () => {
+      window.removeEventListener('navigateToInventory', handleNavigation);
+      window.removeEventListener('navigateToSettings', handleNavigation);
+      window.removeEventListener('openAddCropModal', handleNavigation);
+    };
+  }, []);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -38,6 +66,8 @@ function AppContent() {
         return <InventoryManagement />;
       case 'reports':
         return <Reports />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }

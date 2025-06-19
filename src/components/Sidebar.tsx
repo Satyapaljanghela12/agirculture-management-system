@@ -57,9 +57,41 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
       </div>
 
       {/* Owner Information Panel */}
-      
-            {/* Farm Information */}
-    
+      {user && (
+        <div className="p-6 border-b border-green-700/50 bg-green-800/30">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white">{user.firstName} {user.lastName}</h3>
+              <p className="text-green-300 text-sm">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+            </div>
+          </div>
+          
+          {/* Farm Information */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Sprout className="w-4 h-4 text-green-400" />
+              <span className="text-green-200 text-sm">{user.farmName}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <LocationIcon className="w-4 h-4 text-green-400" />
+              <span className="text-green-200 text-sm">{user.farmLocation}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <MapPin className="w-4 h-4 text-green-400" />
+              <span className="text-green-200 text-sm">{user.farmSize} acres</span>
+            </div>
+            {user.phoneNumber && (
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4 text-green-400" />
+                <span className="text-green-200 text-sm">{user.phoneNumber}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-green-800">
@@ -93,7 +125,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
       {/* Footer Actions */}
       <div className="p-4 border-t border-green-700/50 bg-green-800/30">
         <div className="space-y-2">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-green-200 hover:bg-green-700/50 hover:text-white rounded-xl transition-all duration-300 group">
+          <button 
+            onClick={() => setActiveSection('settings')}
+            className="w-full flex items-center space-x-3 px-4 py-3 text-green-200 hover:bg-green-700/50 hover:text-white rounded-xl transition-all duration-300 group"
+          >
             <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-medium">Settings</span>
           </button>
