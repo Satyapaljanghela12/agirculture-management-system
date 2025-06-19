@@ -56,10 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
         </div>
       </div>
 
-      {/* Owner Information Panel */}
-      
-            {/* Farm Information */}
-    
+
       
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-green-800">
@@ -93,7 +90,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
       {/* Footer Actions */}
       <div className="p-4 border-t border-green-700/50 bg-green-800/30">
         <div className="space-y-2">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 text-green-200 hover:bg-green-700/50 hover:text-white rounded-xl transition-all duration-300 group">
+          <button 
+            onClick={() => setActiveSection('settings')}
+            className="w-full flex items-center space-x-3 px-4 py-3 text-green-200 hover:bg-green-700/50 hover:text-white rounded-xl transition-all duration-300 group"
+          >
             <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <span className="font-medium">Settings</span>
           </button>
