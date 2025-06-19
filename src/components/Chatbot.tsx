@@ -286,7 +286,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ isOpen, onToggle }) => {
           </div>
 
           {/* Input */}
+<<<<<<< HEAD
           <div className="p-1 border-t border-gray-200">
+=======
+          <div className="p-4 border-t border-gray-200">
+>>>>>>> df94da3bf1b5ee9121bb9a1104786e031140898f
             <div className="flex items-center space-x-2">
               <input
                 type="text"
