@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Package,
   Plus,
@@ -11,11 +11,16 @@ import {
   MapPin,
   Edit,
   Eye,
-  RotateCcw
+  RotateCcw,
+  X,
+  Save,
+  Trash2
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 interface InventoryItem {
-  id: string;
+  _id?: string;
   name: string;
   category: string;
   currentStock: number;
@@ -28,102 +33,173 @@ interface InventoryItem {
   lastRestocked: string;
   expiryDate?: string;
   notes: string;
+  barcode?: string;
+}
+
+interface NewInventoryForm {
+  name: string;
+  category: string;
+  currentStock: string;
+  minStock: string;
+  maxStock: string;
+  unit: string;
+  location: string;
+  supplier: string;
+  costPerUnit: string;
+  lastRestocked: string;
+  expiryDate: string;
+  notes: string;
+  barcode: string;
 }
 
 const InventoryManagement: React.FC = () => {
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showLowStock, setShowLowStock] = useState(false);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState<InventoryItem | null>(null);
 
-  const [inventory] = useState<InventoryItem[]>([
-    {
-      id: '1',
-      name: 'Organic Fertilizer NPK 10-10-10',
-      category: 'Fertilizers',
-      currentStock: 15,
-      minStock: 20,
-      maxStock: 100,
-      unit: 'bags (50kg)',
-      location: 'Storage Shed A',
-      supplier: 'GreenGrow Supplies',
-      costPerUnit: 45.99,
-      lastRestocked: '2024-04-20',
-      notes: 'Low stock - reorder soon'
-    },
-    {
-      id: '2',
-      name: 'Tomato Seeds - Roma Variety',
-      category: 'Seeds',
-      currentStock: 5,
-      minStock: 3,
-      maxStock: 15,
-      unit: 'packets',
-      location: 'Seed Storage',
-      supplier: 'Heritage Seeds Co.',
-      costPerUnit: 12.50,
-      lastRestocked: '2024-03-15',
-      expiryDate: '2025-03-15',
-      notes: 'Store in cool, dry place'
-    },
-    {
-      id: '3',
-      name: 'Herbicide - Glyphosate 41%',
-      category: 'Pesticides',
-      currentStock: 8,
-      minStock: 5,
-      maxStock: 20,
-      unit: 'bottles (1L)',
-      location: 'Pesticide Cabinet',
-      supplier: 'AgriChem Solutions',
-      costPerUnit: 28.75,
-      lastRestocked: '2024-05-01',
-      expiryDate: '2026-05-01',
-      notes: 'Handle with care - PPE required'
-    },
-    {
-      id: '4',
-      name: 'Irrigation Drip Tape',
-      category: 'Equipment',
-      currentStock: 12,
-      minStock: 8,
-      maxStock: 30,
-      unit: 'rolls (500ft)',
-      location: 'Equipment Shed',
-      supplier: 'Irrigation Pro',
-      costPerUnit: 85.00,
-      lastRestocked: '2024-04-10',
-      notes: 'Good quality, reusable'
-    },
-    {
-      id: '5',
-      name: 'Potting Mix - Premium Blend',
-      category: 'Soil & Amendments',
-      currentStock: 25,
-      minStock: 15,
-      maxStock: 50,
-      unit: 'bags (40L)',
-      location: 'Storage Shed B',
-      supplier: 'Earth Care Products',
-      costPerUnit: 18.99,
-      lastRestocked: '2024-05-05',
-      notes: 'Great for seedling production'
-    },
-    {
-      id: '6',
-      name: 'Corn Seeds - Sweet Corn',
-      category: 'Seeds',
-      currentStock: 2,
-      minStock: 5,
-      maxStock: 12,
-      unit: 'bags (10kg)',
-      location: 'Seed Storage',
-      supplier: 'Premium Seeds Ltd.',
-      costPerUnit: 125.00,
-      lastRestocked: '2024-03-20',
-      expiryDate: '2025-03-20',
-      notes: 'Urgent reorder needed'
+  const [formData, setFormData] = useState<NewInventoryForm>({
+    name: '',
+    category: '',
+    currentStock: '',
+    minStock: '',
+    maxStock: '',
+    unit: '',
+    location: '',
+    supplier: '',
+    costPerUnit: '',
+    lastRestocked: new Date().toISOString().split('T')[0],
+    expiryDate: '',
+    notes: '',
+    barcode: ''
+  });
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  const fetchInventory = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/inventory', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setInventory(response.data);
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => prev ? { ...prev, [name]: value } : null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const newItem = {
+        name: formData.name,
+        category: formData.category,
+        currentStock: parseFloat(formData.currentStock),
+        minStock: parseFloat(formData.minStock),
+        maxStock: parseFloat(formData.maxStock),
+        unit: formData.unit,
+        location: formData.location,
+        supplier: formData.supplier,
+        costPerUnit: parseFloat(formData.costPerUnit),
+        lastRestocked: formData.lastRestocked,
+        expiryDate: formData.expiryDate || undefined,
+        notes: formData.notes,
+        barcode: formData.barcode || undefined
+      };
+
+      await axios.post('/inventory', newItem, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await fetchInventory();
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error creating inventory item:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData || !editFormData._id) return;
+    
+    setLoading(true);
+    try {
+      await axios.put(`/inventory/${editFormData._id}`, editFormData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await fetchInventory();
+      setShowEditModal(false);
+      setEditFormData(null);
+    } catch (error) {
+      console.error('Error updating inventory item:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (itemId: string) => {
+    if (!window.confirm('Are you sure you want to delete this inventory item?')) return;
+    
+    setLoading(true);
+    try {
+      await axios.delete(`/inventory/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchInventory();
+    } catch (error) {
+      console.error('Error deleting inventory item:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      category: '',
+      currentStock: '',
+      minStock: '',
+      maxStock: '',
+      unit: '',
+      location: '',
+      supplier: '',
+      costPerUnit: '',
+      lastRestocked: new Date().toISOString().split('T')[0],
+      expiryDate: '',
+      notes: '',
+      barcode: ''
+    });
+  };
+
+  const handleEdit = (item: InventoryItem) => {
+    setEditFormData(item);
+    setShowEditModal(true);
+  };
 
   const getStockStatus = (item: InventoryItem) => {
     if (item.currentStock <= item.minStock) return { status: 'low', color: 'text-red-600', icon: TrendingDown };
@@ -137,7 +213,9 @@ const InventoryManagement: React.FC = () => {
       'Fertilizers': 'bg-blue-100 text-blue-800',
       'Pesticides': 'bg-red-100 text-red-800',
       'Equipment': 'bg-purple-100 text-purple-800',
-      'Soil & Amendments': 'bg-yellow-100 text-yellow-800'
+      'Soil & Amendments': 'bg-yellow-100 text-yellow-800',
+      'Tools': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-gray-100 text-gray-800'
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -173,6 +251,8 @@ const InventoryManagement: React.FC = () => {
     categories: [...new Set(inventory.map(item => item.category))].length
   };
 
+  const categories = ['Seeds', 'Fertilizers', 'Pesticides', 'Equipment', 'Soil & Amendments', 'Tools', 'Other'];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -180,7 +260,10 @@ const InventoryManagement: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
           <p className="text-gray-600 mt-1">Track supplies, equipment, and materials</p>
         </div>
-        <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-sm">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-sm"
+        >
           <Plus className="w-5 h-5" />
           <span>Add Item</span>
         </button>
@@ -254,7 +337,7 @@ const InventoryManagement: React.FC = () => {
               type="text"
               placeholder="Search items, suppliers, or locations..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) =>setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
@@ -266,11 +349,9 @@ const InventoryManagement: React.FC = () => {
               className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
             >
               <option value="all">All Categories</option>
-              <option value="Seeds">Seeds</option>
-              <option value="Fertilizers">Fertilizers</option>
-              <option value="Pesticides">Pesticides</option>
-              <option value="Equipment">Equipment</option>
-              <option value="Soil & Amendments">Soil & Amendments</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
             </select>
             <label className="flex items-center space-x-2">
               <input
@@ -292,7 +373,7 @@ const InventoryManagement: React.FC = () => {
           const StockIcon = stockStatus.icon;
           
           return (
-            <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div key={item._id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -399,8 +480,17 @@ const InventoryManagement: React.FC = () => {
                       <RotateCcw className="w-4 h-4" />
                       <span className="text-sm font-medium">Restock</span>
                     </button>
-                    <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <button 
+                      onClick={() => handleEdit(item)}
+                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
                       <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(item._id!)}
+                      className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -410,11 +500,341 @@ const InventoryManagement: React.FC = () => {
         })}
       </div>
 
-      {filteredInventory.length === 0 && (
+      {filteredInventory.length === 0 && !loading && (
         <div className="text-center py-12">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
           <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+        </div>
+      )}
+
+      {/* Add Item Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Inventory Item</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Basic Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Item Name *</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., Organic Fertilizer NPK 10-10-10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                    <input
+                      type="text"
+                      name="unit"
+                      value={formData.unit}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., bags (50kg), bottles (1L), packets"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Supplier *</label>
+                    <input
+                      type="text"
+                      name="supplier"
+                      value={formData.supplier}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., GreenGrow Supplies"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Stock Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Stock Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Stock *</label>
+                    <input
+                      type="number"
+                      name="currentStock"
+                      value={formData.currentStock}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.1"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., 15"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Stock *</label>
+                    <input
+                      type="number"
+                      name="minStock"
+                      value={formData.minStock}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.1"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., 5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Stock *</label>
+                    <input
+                      type="number"
+                      name="maxStock"
+                      value={formData.maxStock}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.1"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., 100"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Location and Cost */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Location and Cost</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., Storage Shed A"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Cost per Unit ($) *</label>
+                    <input
+                      type="number"
+                      name="costPerUnit"
+                      value={formData.costPerUnit}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      step="0.01"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., 45.99"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Restocked</label>
+                    <input
+                      type="date"
+                      name="lastRestocked"
+                      value={formData.lastRestocked}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date (Optional)</label>
+                    <input
+                      type="date"
+                      name="expiryDate"
+                      value={formData.expiryDate}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Additional Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Barcode (Optional)</label>
+                    <input
+                      type="text"
+                      name="barcode"
+                      value={formData.barcode}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="e.g., 1234567890123"
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                  <textarea
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="Any additional notes about this item..."
+                  />
+                </div>
+              </div>
+
+              {/* Form Actions */}
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <span>{loading ? 'Adding...' : 'Add Item'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {showEditModal && editFormData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Inventory Item</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Current Stock</label>
+                  <input
+                    type="number"
+                    name="currentStock"
+                    value={editFormData.currentStock}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    step="0.1"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={editFormData.location}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cost per Unit ($)</label>
+                  <input
+                    type="number"
+                    name="costPerUnit"
+                    value={editFormData.costPerUnit}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  name="notes"
+                  value={editFormData.notes}
+                  onChange={handleEditInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <span>{loading ? 'Updating...' : 'Update Item'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
