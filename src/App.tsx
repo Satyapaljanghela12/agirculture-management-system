@@ -11,9 +11,12 @@ import FinanceManagement from './components/FinanceManagement';
 import TaskManagement from './components/TaskManagement';
 import InventoryManagement from './components/InventoryManagement';
 import Reports from './components/Reports';
+import Chatbot from './components/Chatbot';
+import { MessageCircle } from 'lucide-react';
 
 function AppContent() {
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -48,6 +51,22 @@ function AppContent() {
           {renderActiveSection()}
         </div>
       </main>
+      
+      {/* Chatbot Toggle Button */}
+      {!isChatbotOpen && (
+        <button
+          onClick={() => setIsChatbotOpen(true)}
+          className="fixed bottom-4 right-4 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 z-40"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
+      
+      {/* Chatbot Component */}
+      <Chatbot 
+        isOpen={isChatbotOpen} 
+        onToggle={() => setIsChatbotOpen(!isChatbotOpen)} 
+      />
     </div>
   );
 }

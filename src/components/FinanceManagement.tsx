@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   DollarSign,
   Plus,
@@ -12,11 +12,17 @@ import {
   CreditCard,
   Receipt,
   Target,
-  AlertCircle
+  AlertCircle,
+  X,
+  Save,
+  Edit,
+  Trash2
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 interface Transaction {
-  id: string;
+  _id?: string;
   date: string;
   description: string;
   category: string;
@@ -24,6 +30,19 @@ interface Transaction {
   amount: number;
   field?: string;
   notes: string;
+  receipt?: string;
+  paymentMethod: 'cash' | 'check' | 'bank_transfer' | 'credit_card' | 'other';
+}
+
+interface NewTransactionForm {
+  date: string;
+  description: string;
+  category: string;
+  type: 'income' | 'expense';
+  amount: string;
+  field: string;
+  notes: string;
+  paymentMethod: 'cash' | 'check' | 'bank_transfer' | 'credit_card' | 'other';
 }
 
 interface Budget {
@@ -34,60 +53,25 @@ interface Budget {
 }
 
 const FinanceManagement: React.FC = () => {
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [filterPeriod, setFilterPeriod] = useState('month');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState<Transaction | null>(null);
 
-  const [transactions] = useState<Transaction[]>([
-    {
-      id: '1',
-      date: '2024-05-15',
-      description: 'Tomato Harvest Sale',
-      category: 'Crop Sales',
-      type: 'income',
-      amount: 3250,
-      field: 'Field A',
-      notes: 'Premium tomatoes to local market'
-    },
-    {
-      id: '2',
-      date: '2024-05-14',
-      description: 'Fertilizer Purchase',
-      category: 'Supplies',
-      type: 'expense',
-      amount: 450,
-      field: 'Field B',
-      notes: 'Organic fertilizer for corn'
-    },
-    {
-      id: '3',
-      date: '2024-05-12',
-      description: 'Equipment Maintenance',
-      category: 'Maintenance',
-      type: 'expense',
-      amount: 850,
-      notes: 'Tractor hydraulic system repair'
-    },
-    {
-      id: '4',
-      date: '2024-05-10',
-      description: 'Wheat Contract Payment',
-      category: 'Crop Sales',
-      type: 'income',
-      amount: 12500,
-      field: 'Field C',
-      notes: 'Contract delivery to grain elevator'
-    },
-    {
-      id: '5',
-      date: '2024-05-08',
-      description: 'Seeds Purchase',
-      category: 'Supplies',
-      type: 'expense',
-      amount: 680,
-      field: 'Field D',
-      notes: 'Soybean seeds for new planting'
-    }
-  ]);
+  const [formData, setFormData] = useState<NewTransactionForm>({
+    date: new Date().toISOString().split('T')[0],
+    description: '',
+    category: '',
+    type: 'expense',
+    amount: '',
+    field: '',
+    notes: '',
+    paymentMethod: 'cash'
+  });
 
   const [budgets] = useState<Budget[]>([
     { category: 'Seeds & Plants', budgeted: 5000, spent: 2340, remaining: 2660 },
@@ -97,6 +81,118 @@ const FinanceManagement: React.FC = () => {
     { category: 'Labor', budgeted: 8000, spent: 4200, remaining: 3800 },
     { category: 'Insurance', budgeted: 1500, spent: 1500, remaining: 0 }
   ]);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/finance/transactions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTransactions(response.data);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => prev ? { ...prev, [name]: value } : null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const newTransaction = {
+        date: formData.date,
+        description: formData.description,
+        category: formData.category,
+        type: formData.type,
+        amount: parseFloat(formData.amount),
+        field: formData.field || undefined,
+        notes: formData.notes,
+        paymentMethod: formData.paymentMethod
+      };
+
+      await axios.post('/finance/transactions', newTransaction, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await fetchTransactions();
+      setShowAddModal(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error creating transaction:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData || !editFormData._id) return;
+    
+    setLoading(true);
+    try {
+      await axios.put(`/finance/transactions/${editFormData._id}`, editFormData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      await fetchTransactions();
+      setShowEditModal(false);
+      setEditFormData(null);
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (transactionId: string) => {
+    if (!window.confirm('Are you sure you want to delete this transaction?')) return;
+    
+    setLoading(true);
+    try {
+      await axios.delete(`/finance/transactions/${transactionId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      await fetchTransactions();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      date: new Date().toISOString().split('T')[0],
+      description: '',
+      category: '',
+      type: 'expense',
+      amount: '',
+      field: '',
+      notes: '',
+      paymentMethod: 'cash'
+    });
+  };
+
+  const handleEdit = (transaction: Transaction) => {
+    setEditFormData(transaction);
+    setShowEditModal(true);
+  };
 
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
@@ -109,7 +205,11 @@ const FinanceManagement: React.FC = () => {
       'Maintenance': 'bg-yellow-100 text-yellow-800',
       'Labor': 'bg-purple-100 text-purple-800',
       'Fuel & Energy': 'bg-orange-100 text-orange-800',
-      'Insurance': 'bg-gray-100 text-gray-800'
+      'Insurance': 'bg-gray-100 text-gray-800',
+      'Seeds & Plants': 'bg-emerald-100 text-emerald-800',
+      'Fertilizers': 'bg-cyan-100 text-cyan-800',
+      'Equipment': 'bg-indigo-100 text-indigo-800',
+      'Other': 'bg-pink-100 text-pink-800'
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -120,6 +220,15 @@ const FinanceManagement: React.FC = () => {
     if (percentage >= 80) return { color: 'text-yellow-600', status: 'Nearly Exceeded' };
     return { color: 'text-green-600', status: 'On Track' };
   };
+
+  const incomeCategories = [
+    'Crop Sales', 'Livestock Sales', 'Equipment Rental', 'Government Subsidies', 'Insurance Claims', 'Other Income'
+  ];
+
+  const expenseCategories = [
+    'Seeds & Plants', 'Fertilizers', 'Pesticides', 'Fuel & Energy', 'Equipment Maintenance', 
+    'Labor', 'Insurance', 'Supplies', 'Transportation', 'Storage', 'Marketing', 'Other'
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -133,7 +242,10 @@ const FinanceManagement: React.FC = () => {
             <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-sm">
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-sm"
+          >
             <Plus className="w-5 h-5" />
             <span>Add Transaction</span>
           </button>
@@ -262,7 +374,7 @@ const FinanceManagement: React.FC = () => {
 
               <div className="space-y-3">
                 {transactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                  <div key={transaction._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                     <div className="flex items-center space-x-4">
                       <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'}`}>
                         {transaction.type === 'income' ? (
@@ -284,13 +396,29 @@ const FinanceManagement: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className={`text-lg font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}
-                      </p>
-                      {transaction.notes && (
-                        <p className="text-sm text-gray-500 mt-1">{transaction.notes}</p>
-                      )}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className={`text-lg font-bold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                          {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString()}
+                        </p>
+                        {transaction.notes && (
+                          <p className="text-sm text-gray-500 mt-1">{transaction.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => handleEdit(transaction)}
+                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(transaction._id!)}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -404,6 +532,252 @@ const FinanceManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Add Transaction Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Add New Transaction</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
+                  <input
+                    type="date"
+                    name="date"
+                    value={formData.date}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Type *</label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                  <input
+                    type="text"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., Tomato harvest sale"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                    {formData.type === 'income' 
+                      ? incomeCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                      : expenseCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                    }
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount ($) *</label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={formData.amount}
+                    onChange={handleInputChange}
+                    required
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    placeholder="e.g., 1250.00"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                  <select
+                    name="paymentMethod"
+                    value={formData.paymentMethod}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="bank_transfer">Bank Transfer</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Field (Optional)</label>
+                <input
+                  type="text"
+                  name="field"
+                  value={formData.field}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., Field A"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Any additional notes..."
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <span>{loading ? 'Adding...' : 'Add Transaction'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {showEditModal && editFormData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Edit Transaction</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <input
+                    type="text"
+                    name="description"
+                    value={editFormData.description}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amount ($)</label>
+                  <input
+                    type="number"
+                    name="amount"
+                    value={editFormData.amount}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={editFormData.category}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Field</label>
+                  <input
+                    type="text"
+                    name="field"
+                    value={editFormData.field || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  name="notes"
+                  value={editFormData.notes}
+                  onChange={handleEditInputChange}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <Save className="w-5 h-5" />
+                  )}
+                  <span>{loading ? 'Updating...' : 'Update Transaction'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
