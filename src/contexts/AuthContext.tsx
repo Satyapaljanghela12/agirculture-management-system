@@ -60,7 +60,7 @@ axios.defaults.timeout = 30000; // 30 second timeout
 // Add request interceptor for debugging
 axios.interceptors.request.use(
   (config) => {
-    console.log('Making request to:', config.baseURL + config.url);
+    console.log('Making request to:', `${config.baseURL || ''}${config.url || ''}`);
     return config;
   },
   (error) => {

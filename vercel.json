@@ -26,11 +26,7 @@
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "JWT_SECRET": "@jwt_secret",
-<<<<<<< HEAD
     "VITE_OPENWEATHER_API_KEY": "@openweathermap_api_key",
-=======
-    "OPENWEATHERMAP_API_KEY": "@openweathermap_api_key",
->>>>>>> 86a51934dfa5a4c4fc1116d05d641290ff323e3a
     "NODE_ENV": "production"
   }
 }

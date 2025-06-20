@@ -119,7 +119,7 @@ app.get('/api/weather', async (req, res) => {
       return res.status(400).json({ error: 'City parameter is required' });
     }
 
-    if (!process.env.OPENWEATHERMAP_API_KEY) {
+    if (!process.env.VITE_OPENWEATHER_API_KEY) {
       return res.status(503).json({ 
         error: 'Weather service not configured',
         message: 'Weather API key not available'
@@ -157,7 +157,7 @@ app.get('/api/weather/forecast', async (req, res) => {
       return res.status(400).json({ error: 'City parameter is required' });
     }
 
-    if (!process.env.OPENWEATHERMAP_API_KEY) {
+    if (!process.env.VITE_OPENWEATHER_API_KEY) {
       return res.status(503).json({ 
         error: 'Weather service not configured',
         message: 'Weather API key not available'
@@ -198,7 +198,7 @@ app.get('/api/health', (req, res) => {
     environment: process.env.NODE_ENV || 'development',
     services: {
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      weather_api: process.env.OPENWEATHERMAP_API_KEY ? 'configured' : 'not configured'
+      weather_api: process.env.VITE_OPENWEATHER_API_KEY ? 'configured' : 'not configured'
     },
     version: process.env.npm_package_version || '1.0.0'
   };
@@ -277,7 +277,7 @@ const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'configured' : 'using default'}`);
-  console.log(`Weather API: ${process.env.OPENWEATHERMAP_API_KEY ? 'configured' : 'not configured'}`);
+  console.log(`Weather API: ${process.env.VITE_OPENWEATHER_API_KEY ? 'configured' : 'not configured'}`);
 });
 
 // Graceful shutdown
