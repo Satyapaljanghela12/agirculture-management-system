@@ -2,7 +2,7 @@
 
 A comprehensive farm management system built with React, Node.js, Express, and MongoDB. This application helps farmers manage crops, fields, tasks, inventory, equipment, and finances efficiently.
 
-## Features
+## 🌟 Features
 
 - **Dashboard**: Overview of farm operations with real-time statistics
 - **Crop Management**: Track crop lifecycle, health, and progress
@@ -14,8 +14,9 @@ A comprehensive farm management system built with React, Node.js, Express, and M
 - **Financial Management**: Monitor income, expenses, and profitability
 - **Reports & Analytics**: Generate detailed reports and insights
 - **AI Chatbot**: Get farming advice and assistance
+- **User Authentication**: Secure login and registration system
 
-## Tech Stack
+## 🚀 Tech Stack
 
 - **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
 - **Backend**: Node.js, Express.js
@@ -24,13 +25,13 @@ A comprehensive farm management system built with React, Node.js, Express, and M
 - **Icons**: Lucide React
 - **Deployment**: Vercel
 
-## Prerequisites
+## 📋 Prerequisites
 
 - Node.js 18+ 
-- MongoDB database
+- MongoDB database (MongoDB Atlas recommended for production)
 - OpenWeatherMap API key (optional, for weather features)
 
-## Environment Variables
+## 🛠️ Environment Variables
 
 Create a `.env` file in the root directory with the following variables:
 
@@ -42,7 +43,7 @@ MONGODB_URI=your_mongodb_connection_string
 JWT_SECRET=your_super_secret_jwt_key_here
 
 # Weather API (optional)
-OPENWEATHERMAP_API_KEY=your_openweathermap_api_key
+VITE_OPENWEATHER_API_KEY=your_openweathermap_api_key
 
 # Server Configuration
 PORT=5000
@@ -50,9 +51,14 @@ NODE_ENV=production
 
 # Frontend URL (for CORS)
 FRONTEND_URL=https://your-domain.vercel.app
+
+# Default location for weather (optional)
+VITE_DEFAULT_LAT=40.7128
+VITE_DEFAULT_LON=-74.0060
+VITE_DEFAULT_CITY=New York
 ```
 
-## Local Development
+## 🏃‍♂️ Local Development
 
 1. **Clone the repository**
    ```bash
@@ -84,16 +90,31 @@ FRONTEND_URL=https://your-domain.vercel.app
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:5000/api
 
-## Deployment to Vercel
+## 🚀 Deployment to Vercel
 
-### 1. Prepare for Deployment
+### Step 1: Prepare for Deployment
 
 Ensure your project has the following files:
 - `vercel.json` (already included)
 - `.env.example` (for reference)
 - Updated `package.json` with build scripts
 
-### 2. Deploy to Vercel
+### Step 2: Set Up MongoDB Atlas
+
+1. **Create MongoDB Atlas Account**
+   - Go to [MongoDB Atlas](https://www.mongodb.com/atlas)
+   - Create a free cluster
+
+2. **Configure Database Access**
+   - Create a database user
+   - Whitelist IP addresses (0.0.0.0/0 for all IPs)
+
+3. **Get Connection String**
+   - Click "Connect" → "Connect your application"
+   - Copy the connection string
+   - Replace `<password>` with your database user password
+
+### Step 3: Deploy to Vercel
 
 #### Option A: Using Vercel CLI
 
@@ -125,7 +146,7 @@ Ensure your project has the following files:
    - Output Directory: `dist`
    - Install Command: `npm install`
 
-### 3. Set Environment Variables
+### Step 4: Set Environment Variables
 
 In your Vercel project dashboard:
 
@@ -135,35 +156,24 @@ In your Vercel project dashboard:
 ```
 MONGODB_URI = your_mongodb_atlas_connection_string
 JWT_SECRET = your_super_secret_jwt_key_here
-OPENWEATHERMAP_API_KEY = your_openweathermap_api_key (optional)
+VITE_OPENWEATHER_API_KEY = your_openweathermap_api_key (optional)
 NODE_ENV = production
+FRONTEND_URL = https://your-vercel-domain.vercel.app
+VITE_DEFAULT_LAT = 40.7128 (optional)
+VITE_DEFAULT_LON = -74.0060 (optional)
+VITE_DEFAULT_CITY = New York (optional)
 ```
 
-### 4. Database Setup (MongoDB Atlas)
-
-1. **Create MongoDB Atlas Account**
-   - Go to [MongoDB Atlas](https://www.mongodb.com/atlas)
-   - Create a free cluster
-
-2. **Configure Database Access**
-   - Create a database user
-   - Whitelist IP addresses (0.0.0.0/0 for all IPs)
-
-3. **Get Connection String**
-   - Click "Connect" → "Connect your application"
-   - Copy the connection string
-   - Replace `<password>` with your database user password
-
-### 5. Weather API Setup (Optional)
+### Step 5: Weather API Setup (Optional)
 
 1. **Get OpenWeatherMap API Key**
    - Go to [OpenWeatherMap](https://openweathermap.org/api)
    - Sign up and get a free API key
 
 2. **Add to Environment Variables**
-   - Add `OPENWEATHERMAP_API_KEY` to Vercel environment variables
+   - Add `VITE_OPENWEATHER_API_KEY` to Vercel environment variables
 
-## API Endpoints
+## 📡 API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Register new user
@@ -215,7 +225,7 @@ NODE_ENV = production
 ### Health Check
 - `GET /api/health` - API health status
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Common Issues
 
@@ -238,11 +248,24 @@ NODE_ENV = production
    - Check API key usage limits
    - The app works with mock data if API key is not provided
 
+5. **Build Errors on Vercel**
+   - Check that all dependencies are listed in package.json
+   - Verify Node.js version compatibility
+   - Check build logs in Vercel dashboard
+
 ### Debug Mode
 
 To enable debug logging, set `NODE_ENV=development` in your environment variables.
 
-## Contributing
+## 🎯 Demo Credentials
+
+For testing purposes, you can use:
+- Email: demo@agrimanage.com
+- Password: demo123
+
+Or register a new account with your own credentials.
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -250,11 +273,11 @@ To enable debug logging, set `NODE_ENV=development` in your environment variable
 4. Test thoroughly
 5. Submit a pull request
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License.
 
-## Support
+## 🆘 Support
 
 For support and questions:
 - Check the troubleshooting section
@@ -262,10 +285,69 @@ For support and questions:
 - Check MongoDB Atlas logs
 - Verify all environment variables are set correctly
 
-## Demo Credentials
+## 🌟 Features Overview
 
-For testing purposes, you can use:
-- Email: demo@agrimanage.com
-- Password: demo123
+### Dashboard
+- Real-time farm statistics
+- Weather monitoring
+- Quick actions
+- Recent activities
+- Financial overview
 
-Or register a new account with your own credentials.
+### Crop Management
+- Track crop lifecycle
+- Monitor health and progress
+- Manage planting and harvest dates
+- Cost tracking
+
+### Field Management
+- Soil condition monitoring
+- Nutrient level tracking
+- Field utilization
+- GPS coordinates
+
+### Weather Dashboard
+- Current weather conditions
+- 5-day forecast
+- Weather alerts
+- Farm recommendations
+
+### Task Management
+- Task scheduling
+- Priority management
+- Progress tracking
+- Team collaboration
+
+### Inventory Management
+- Stock level monitoring
+- Low stock alerts
+- Supplier management
+- Cost tracking
+
+### Equipment Management
+- Maintenance scheduling
+- Usage tracking
+- Status monitoring
+- Cost management
+
+### Financial Management
+- Income and expense tracking
+- Budget management
+- Profit analysis
+- Report generation
+
+### Reports & Analytics
+- Comprehensive reporting
+- Data visualization
+- Export capabilities
+- Performance metrics
+
+### AI Chatbot
+- Farming advice
+- Question answering
+- Interactive assistance
+- Knowledge base
+
+---
+
+Built with ❤️ for farmers worldwide

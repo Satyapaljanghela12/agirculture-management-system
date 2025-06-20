@@ -23,10 +23,12 @@
       "dest": "/index.html"
     }
   ],
+  "functions": {
+    "server/index.js": {
+      "maxDuration": 30
+    }
+  },
   "env": {
-    "MONGODB_URI": "@mongodb_uri",
-    "JWT_SECRET": "@jwt_secret",
-    "VITE_OPENWEATHER_API_KEY": "@openweathermap_api_key",
     "NODE_ENV": "production"
   }
 }
