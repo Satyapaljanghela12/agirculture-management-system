@@ -227,7 +227,7 @@ const generateSummaryHTML = (summary: { [key: string]: any }): string => {
     const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
     const formattedValue = typeof value === 'number' ? 
       (key.toLowerCase().includes('cost') || key.toLowerCase().includes('revenue') || key.toLowerCase().includes('profit') ? 
-        `$${value.toLocaleString()}` : value.toLocaleString()) : value;
+        `₹${value.toLocaleString('en-IN')}` : value.toLocaleString('en-IN')) : value;
     
     return `
       <div class="summary-item">
@@ -261,11 +261,11 @@ const generateTableHTML = (data: any[], columns: { key: string; label: string; w
         value = value ? 'Yes' : 'No';
       } else if (typeof value === 'number') {
         if (col.key.toLowerCase().includes('cost') || col.key.toLowerCase().includes('price') || col.key.toLowerCase().includes('amount')) {
-          value = `$${value.toLocaleString()}`;
+          value = `₹${value.toLocaleString('en-IN')}`;
         } else if (col.key.toLowerCase().includes('percent') || col.key.toLowerCase().includes('progress')) {
           value = `${value}%`;
         } else {
-          value = value.toLocaleString();
+          value = value.toLocaleString('en-IN');
         }
       } else if (col.key.toLowerCase().includes('date')) {
         value = new Date(value).toLocaleDateString();

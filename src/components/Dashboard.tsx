@@ -207,7 +207,7 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">${stats.totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">₹{stats.totalRevenue.toLocaleString('en-IN')}</p>
               <div className="flex items-center mt-2">
                 <TrendingUp className="w-4 h-4 text-green-500" />
                 <span className="text-sm text-green-600 ml-1">+{stats.revenueChange}% from last month</span>
