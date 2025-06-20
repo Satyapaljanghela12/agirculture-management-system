@@ -23,14 +23,7 @@ import {
   Monitor,
   Trash2,
   Eye,
-<<<<<<< HEAD
   EyeOff
-=======
-  EyeOff,
-  QrCode,
-  Copy,
-  Download
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -67,19 +60,6 @@ interface PasswordForm {
   confirmPassword: string;
 }
 
-<<<<<<< HEAD
-=======
-interface Session {
-  id: number;
-  device: string;
-  location: string;
-  lastActive: string;
-  current: boolean;
-  ipAddress: string;
-  browser: string;
-}
-
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
 const Settings: React.FC = () => {
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
@@ -92,13 +72,6 @@ const Settings: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-<<<<<<< HEAD
-=======
-  const [qrCodeUrl, setQrCodeUrl] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
 
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: user?.firstName || '',
@@ -122,13 +95,8 @@ const Settings: React.FC = () => {
     theme: 'light',
     language: 'en',
     timezone: 'UTC',
-<<<<<<< HEAD
     dateFormat: 'MM/DD/YYYY',
     currency: 'USD'
-=======
-    dateFormat: 'DD/MM/YYYY',
-    currency: 'INR'
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   });
 
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
@@ -162,12 +130,6 @@ const Settings: React.FC = () => {
     if (savedAppSettings) {
       setAppSettings(JSON.parse(savedAppSettings));
     }
-<<<<<<< HEAD
-=======
-
-    // Check 2FA status
-    check2FAStatus();
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   }, [user]);
 
   // Apply theme changes
@@ -200,19 +162,6 @@ const Settings: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
-  const check2FAStatus = async () => {
-    try {
-      // In a real app, you would call an API to check 2FA status
-      const saved2FA = localStorage.getItem('2fa_enabled');
-      setIs2FAEnabled(saved2FA === 'true');
-    } catch (error) {
-      console.error('Error checking 2FA status:', error);
-    }
-  };
-
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfileData(prev => ({
@@ -320,7 +269,6 @@ const Settings: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   const enable2FA = async () => {
     setLoading(true);
     try {
@@ -330,127 +278,15 @@ const Settings: React.FC = () => {
       setShow2FAModal(false);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to enable 2FA. Please try again.' });
-=======
-  const generate2FAQRCode = async () => {
-    setLoading(true);
-    try {
-      // In a real app, you would call an API to generate QR code
-      const secret = 'JBSWY3DPEHPK3PXP'; // Mock secret
-      const issuer = 'AgriManage';
-      const accountName = user?.email || 'user@example.com';
-      
-      // Generate QR code URL for authenticator apps
-      const qrUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(accountName)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
-      
-      // In a real app, you would use a QR code library to generate the actual QR code image
-      // For demo purposes, we'll use a QR code service
-      const qrCodeImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`;
-      
-      setQrCodeUrl(qrCodeImageUrl);
-      
-      // Generate backup codes
-      const codes = Array.from({ length: 8 }, () => 
-        Math.random().toString(36).substring(2, 8).toUpperCase()
-      );
-      setBackupCodes(codes);
-      
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to generate 2FA setup. Please try again.' });
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
     } finally {
       setLoading(false);
     }
   };
 
-<<<<<<< HEAD
-=======
-  const verify2FASetup = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
-      setMessage({ type: 'error', text: 'Please enter a valid 6-digit verification code.' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // In a real app, you would verify the code with your backend
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      localStorage.setItem('2fa_enabled', 'true');
-      setIs2FAEnabled(true);
-      setMessage({ type: 'success', text: 'Two-factor authentication enabled successfully!' });
-      setShow2FAModal(false);
-      setVerificationCode('');
-      setQrCodeUrl('');
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Invalid verification code. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const disable2FA = async () => {
-    if (!window.confirm('Are you sure you want to disable two-factor authentication? This will make your account less secure.')) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // In a real app, you would call an API to disable 2FA
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      
-      localStorage.removeItem('2fa_enabled');
-      setIs2FAEnabled(false);
-      setMessage({ type: 'success', text: 'Two-factor authentication disabled.' });
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to disable 2FA. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setMessage({ type: 'success', text: 'Copied to clipboard!' });
-    });
-  };
-
-  const downloadBackupCodes = () => {
-    const content = `AgriManage 2FA Backup Codes\n\nGenerated: ${new Date().toLocaleString()}\n\n${backupCodes.join('\n')}\n\nKeep these codes safe and secure. Each code can only be used once.`;
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'agrimanage-backup-codes.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   const viewSessions = () => {
     setShowSessionsModal(true);
   };
 
-<<<<<<< HEAD
-=======
-  const revokeSession = async (sessionId: number) => {
-    if (!window.confirm('Are you sure you want to revoke this session?')) return;
-
-    setLoading(true);
-    try {
-      // In a real app, you would call an API to revoke the session
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setMessage({ type: 'success', text: 'Session revoked successfully!' });
-      // Refresh sessions list
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to revoke session. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   const deleteAccount = async () => {
     if (!window.confirm('Are you absolutely sure? This action cannot be undone.')) {
       return;
@@ -474,41 +310,10 @@ const Settings: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
   const mockSessions = [
     { id: 1, device: 'Chrome on Windows', location: 'New York, US', lastActive: '2 minutes ago', current: true },
     { id: 2, device: 'Safari on iPhone', location: 'New York, US', lastActive: '1 hour ago', current: false },
     { id: 3, device: 'Firefox on Mac', location: 'Boston, US', lastActive: '2 days ago', current: false }
-=======
-  const mockSessions: Session[] = [
-    { 
-      id: 1, 
-      device: 'Chrome on Windows', 
-      location: 'Mumbai, India', 
-      lastActive: '2 minutes ago', 
-      current: true,
-      ipAddress: '192.168.1.100',
-      browser: 'Chrome 120.0'
-    },
-    { 
-      id: 2, 
-      device: 'Safari on iPhone', 
-      location: 'Delhi, India', 
-      lastActive: '1 hour ago', 
-      current: false,
-      ipAddress: '192.168.1.101',
-      browser: 'Safari 17.0'
-    },
-    { 
-      id: 3, 
-      device: 'Firefox on Mac', 
-      location: 'Bangalore, India', 
-      lastActive: '2 days ago', 
-      current: false,
-      ipAddress: '192.168.1.102',
-      browser: 'Firefox 121.0'
-    }
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
   ];
 
   const tabs = [
@@ -834,15 +639,9 @@ const Settings: React.FC = () => {
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="en">English</option>
-<<<<<<< HEAD
                       <option value="es">Spanish</option>
                       <option value="fr">French</option>
                       <option value="de">German</option>
-=======
-                      <option value="hi">Hindi</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                     </select>
                   </div>
                 </div>
@@ -856,10 +655,6 @@ const Settings: React.FC = () => {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="UTC">UTC</option>
-<<<<<<< HEAD
-=======
-                    <option value="Asia/Kolkata">India Standard Time</option>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                     <option value="America/New_York">Eastern Time</option>
                     <option value="America/Chicago">Central Time</option>
                     <option value="America/Denver">Mountain Time</option>
@@ -875,13 +670,8 @@ const Settings: React.FC = () => {
                     onChange={handleAppSettingChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
-<<<<<<< HEAD
                     <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                     <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-=======
-                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                     <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                   </select>
                 </div>
@@ -894,17 +684,10 @@ const Settings: React.FC = () => {
                     onChange={handleAppSettingChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
-<<<<<<< HEAD
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
                     <option value="CAD">CAD (C$)</option>
-=======
-                    <option value="INR">INR (₹)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                   </select>
                 </div>
               </div>
@@ -945,7 +728,6 @@ const Settings: React.FC = () => {
                 </div>
 
                 <div className="p-6 bg-gray-50 rounded-lg">
-<<<<<<< HEAD
                   <h4 className="font-medium text-gray-900 mb-2">Two-Factor Authentication</h4>
                   <p className="text-sm text-gray-600 mb-4">Add an extra layer of security to your account</p>
                   <button 
@@ -955,41 +737,6 @@ const Settings: React.FC = () => {
                     <Smartphone className="w-4 h-4" />
                     <span>Enable 2FA</span>
                   </button>
-=======
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Two-Factor Authentication</h4>
-                      <p className="text-sm text-gray-600">Add an extra layer of security to your account</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {is2FAEnabled && (
-                        <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Enabled</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {!is2FAEnabled ? (
-                      <button 
-                        onClick={() => {
-                          setShow2FAModal(true);
-                          generate2FAQRCode();
-                        }}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                      >
-                        <Smartphone className="w-4 h-4" />
-                        <span>Enable 2FA</span>
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={disable2FA}
-                        className="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors flex items-center space-x-2"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>Disable 2FA</span>
-                      </button>
-                    )}
-                  </div>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                 </div>
 
                 <div className="p-6 bg-gray-50 rounded-lg">
@@ -1120,17 +867,10 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-<<<<<<< HEAD
       {/* 2FA Modal */}
       {show2FAModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-=======
-      {/* 2FA Setup Modal */}
-      {show2FAModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Enable Two-Factor Authentication</h2>
               <button
@@ -1141,7 +881,6 @@ const Settings: React.FC = () => {
               </button>
             </div>
 
-<<<<<<< HEAD
             <div className="p-6">
               <p className="text-gray-600 mb-4">
                 Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your phone.
@@ -1169,96 +908,6 @@ const Settings: React.FC = () => {
                   {loading ? 'Enabling...' : 'Enable 2FA'}
                 </button>
               </div>
-=======
-            <div className="p-6 space-y-6">
-              {!qrCodeUrl ? (
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                  <p className="text-gray-600">Generating QR code...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="text-center">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Scan QR Code</h3>
-                    <p className="text-gray-600 mb-4">
-                      Use your authenticator app (Google Authenticator, Authy, etc.) to scan this QR code:
-                    </p>
-                    <div className="flex justify-center mb-4">
-                      <div className="p-4 bg-white border-2 border-gray-200 rounded-lg">
-                        <img src={qrCodeUrl} alt="2FA QR Code" className="w-48 h-48" />
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                      <p className="text-sm text-gray-600 mb-2">Manual entry key:</p>
-                      <div className="flex items-center justify-between bg-white p-2 rounded border">
-                        <code className="text-sm font-mono">JBSWY3DPEHPK3PXP</code>
-                        <button
-                          onClick={() => copyToClipboard('JBSWY3DPEHPK3PXP')}
-                          className="p-1 hover:bg-gray-100 rounded"
-                        >
-                          <Copy className="w-4 h-4 text-gray-500" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Enter verification code from your app:
-                    </label>
-                    <input
-                      type="text"
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
-                      placeholder="000000"
-                      maxLength={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-lg font-mono"
-                    />
-                  </div>
-
-                  {backupCodes.length > 0 && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-amber-900">Backup Codes</h4>
-                        <button
-                          onClick={downloadBackupCodes}
-                          className="flex items-center space-x-1 text-amber-700 hover:text-amber-800"
-                        >
-                          <Download className="w-4 h-4" />
-                          <span className="text-sm">Download</span>
-                        </button>
-                      </div>
-                      <p className="text-sm text-amber-700 mb-3">
-                        Save these backup codes in a safe place. Each can only be used once.
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {backupCodes.map((code, index) => (
-                          <div key={index} className="bg-white p-2 rounded border text-center">
-                            <code className="text-sm font-mono">{code}</code>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-end space-x-4">
-                    <button
-                      onClick={() => setShow2FAModal(false)}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={verify2FASetup}
-                      disabled={loading || verificationCode.length !== 6}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                      {loading ? 'Verifying...' : 'Enable 2FA'}
-                    </button>
-                  </div>
-                </>
-              )}
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
             </div>
           </div>
         </div>
@@ -1267,11 +916,7 @@ const Settings: React.FC = () => {
       {/* Sessions Modal */}
       {showSessionsModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-<<<<<<< HEAD
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
-=======
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Active Sessions</h2>
               <button
@@ -1286,63 +931,24 @@ const Settings: React.FC = () => {
               <div className="space-y-4">
                 {mockSessions.map((session) => (
                   <div key={session.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-<<<<<<< HEAD
                     <div>
                       <div className="flex items-center space-x-2">
-=======
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                         <h4 className="font-medium text-gray-900">{session.device}</h4>
                         {session.current && (
                           <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Current</span>
                         )}
                       </div>
-<<<<<<< HEAD
                       <p className="text-sm text-gray-600">{session.location}</p>
                       <p className="text-xs text-gray-500">Last active: {session.lastActive}</p>
                     </div>
                     {!session.current && (
                       <button className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm">
-=======
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">Location:</span> {session.location}
-                        </div>
-                        <div>
-                          <span className="font-medium">IP:</span> {session.ipAddress}
-                        </div>
-                        <div>
-                          <span className="font-medium">Browser:</span> {session.browser}
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">Last active: {session.lastActive}</p>
-                    </div>
-                    {!session.current && (
-                      <button 
-                        onClick={() => revokeSession(session.id)}
-                        disabled={loading}
-                        className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm border border-red-200 disabled:opacity-50"
-                      >
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
                         Revoke
                       </button>
                     )}
                   </div>
                 ))}
               </div>
-<<<<<<< HEAD
-=======
-              
-              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">Security Tips</h4>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Revoke sessions from devices you no longer use</li>
-                  <li>• If you see suspicious activity, change your password immediately</li>
-                  <li>• Always log out from public or shared computers</li>
-                </ul>
-              </div>
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
             </div>
           </div>
         </div>

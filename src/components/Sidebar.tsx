@@ -56,46 +56,6 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
         </div>
       </div>
 
-<<<<<<< HEAD
-
-=======
-      {/* Owner Information Panel */}
-      {user && (
-        <div className="p-6 border-b border-green-700/50 bg-green-800/30">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white">{user.firstName} {user.lastName}</h3>
-              <p className="text-green-300 text-sm">{user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
-            </div>
-          </div>
-          
-          {/* Farm Information */}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Sprout className="w-4 h-4 text-green-400" />
-              <span className="text-green-200 text-sm">{user.farmName}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <LocationIcon className="w-4 h-4 text-green-400" />
-              <span className="text-green-200 text-sm">{user.farmLocation}</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <MapPin className="w-4 h-4 text-green-400" />
-              <span className="text-green-200 text-sm">{user.farmSize} acres</span>
-            </div>
-            {user.phoneNumber && (
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-green-400" />
-                <span className="text-green-200 text-sm">{user.phoneNumber}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
->>>>>>> 32548be3e2ff2775935c39cf2937680ec47d8401
       
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-thumb-green-600 scrollbar-track-green-800">
