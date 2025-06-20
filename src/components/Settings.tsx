@@ -17,7 +17,13 @@ import {
   Camera,
   X,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Key,
+  Smartphone,
+  Monitor,
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -48,11 +54,24 @@ interface AppSettings {
   currency: string;
 }
 
+interface PasswordForm {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 const Settings: React.FC = () => {
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [show2FAModal, setShow2FAModal] = useState(false);
+  const [showSessionsModal, setShowSessionsModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: user?.firstName || '',
@@ -80,6 +99,12 @@ const Settings: React.FC = () => {
     currency: 'USD'
   });
 
+  const [passwordForm, setPasswordForm] = useState<PasswordForm>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
@@ -94,7 +119,48 @@ const Settings: React.FC = () => {
         phoneNumber: user.phoneNumber || ''
       });
     }
+
+    // Load saved settings from localStorage
+    const savedNotifications = localStorage.getItem('notificationSettings');
+    if (savedNotifications) {
+      setNotificationSettings(JSON.parse(savedNotifications));
+    }
+
+    const savedAppSettings = localStorage.getItem('appSettings');
+    if (savedAppSettings) {
+      setAppSettings(JSON.parse(savedAppSettings));
+    }
   }, [user]);
+
+  // Apply theme changes
+  useEffect(() => {
+    applyTheme(appSettings.theme);
+  }, [appSettings.theme]);
+
+  const applyTheme = (theme: string) => {
+    const root = document.documentElement;
+    
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      document.body.style.backgroundColor = '#1f2937';
+      document.body.style.color = '#f9fafb';
+    } else if (theme === 'light') {
+      root.classList.remove('dark');
+      document.body.style.backgroundColor = '#ffffff';
+      document.body.style.color = '#1f2937';
+    } else { // auto
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark');
+        document.body.style.backgroundColor = '#1f2937';
+        document.body.style.color = '#f9fafb';
+      } else {
+        root.classList.remove('dark');
+        document.body.style.backgroundColor = '#ffffff';
+        document.body.style.color = '#1f2937';
+      }
+    }
+  };
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -114,6 +180,14 @@ const Settings: React.FC = () => {
   const handleAppSettingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
     setAppSettings(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPasswordForm(prev => ({
       ...prev,
       [name]: value
     }));
@@ -143,7 +217,6 @@ const Settings: React.FC = () => {
     setMessage(null);
 
     try {
-      // In a real app, you would save these to the backend
       localStorage.setItem('notificationSettings', JSON.stringify(notificationSettings));
       setMessage({ type: 'success', text: 'Notification settings saved!' });
     } catch (error) {
@@ -159,7 +232,6 @@ const Settings: React.FC = () => {
     setMessage(null);
 
     try {
-      // In a real app, you would save these to the backend
       localStorage.setItem('appSettings', JSON.stringify(appSettings));
       setMessage({ type: 'success', text: 'App settings saved!' });
     } catch (error) {
@@ -169,6 +241,80 @@ const Settings: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setMessage({ type: 'error', text: 'New passwords do not match.' });
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters long.' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // In a real app, you would call an API to change the password
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      setMessage({ type: 'success', text: 'Password changed successfully!' });
+      setShowPasswordModal(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to change password. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const enable2FA = async () => {
+    setLoading(true);
+    try {
+      // In a real app, you would call an API to enable 2FA
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      setMessage({ type: 'success', text: 'Two-factor authentication enabled successfully!' });
+      setShow2FAModal(false);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to enable 2FA. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const viewSessions = () => {
+    setShowSessionsModal(true);
+  };
+
+  const deleteAccount = async () => {
+    if (!window.confirm('Are you absolutely sure? This action cannot be undone.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // In a real app, you would call an API to delete the account
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      setMessage({ type: 'success', text: 'Account deletion initiated. You will be logged out shortly.' });
+      setShowDeleteModal(false);
+      
+      // In a real app, you would log the user out and redirect
+      setTimeout(() => {
+        // logout();
+      }, 2000);
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to delete account. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const mockSessions = [
+    { id: 1, device: 'Chrome on Windows', location: 'New York, US', lastActive: '2 minutes ago', current: true },
+    { id: 2, device: 'Safari on iPhone', location: 'New York, US', lastActive: '1 hour ago', current: false },
+    { id: 3, device: 'Firefox on Mac', location: 'Boston, US', lastActive: '2 days ago', current: false }
+  ];
 
   const tabs = [
     { id: 'profile', label: 'Profile', icon: User },
@@ -467,7 +613,7 @@ const Settings: React.FC = () => {
                     ) : appSettings.theme === 'dark' ? (
                       <Moon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                     ) : (
-                      <Globe className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+                      <Monitor className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                     )}
                     <select
                       name="theme"
@@ -572,32 +718,48 @@ const Settings: React.FC = () => {
                 <div className="p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">Change Password</h4>
                   <p className="text-sm text-gray-600 mb-4">Update your password to keep your account secure</p>
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                    Change Password
+                  <button 
+                    onClick={() => setShowPasswordModal(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Key className="w-4 h-4" />
+                    <span>Change Password</span>
                   </button>
                 </div>
 
                 <div className="p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">Two-Factor Authentication</h4>
                   <p className="text-sm text-gray-600 mb-4">Add an extra layer of security to your account</p>
-                  <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    Enable 2FA
+                  <button 
+                    onClick={() => setShow2FAModal(true)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center space-x-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>Enable 2FA</span>
                   </button>
                 </div>
 
                 <div className="p-6 bg-gray-50 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">Login Sessions</h4>
                   <p className="text-sm text-gray-600 mb-4">Manage your active login sessions</p>
-                  <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
-                    View Sessions
+                  <button 
+                    onClick={viewSessions}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center space-x-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    <span>View Sessions</span>
                   </button>
                 </div>
 
                 <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
                   <h4 className="font-medium text-red-900 mb-2">Delete Account</h4>
                   <p className="text-sm text-red-700 mb-4">Permanently delete your account and all associated data</p>
-                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                    Delete Account
+                  <button 
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Account</span>
                   </button>
                 </div>
               </div>
@@ -605,6 +767,238 @@ const Settings: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Change Password</h2>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    name="currentPassword"
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    name="newPassword"
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={passwordForm.confirmPassword}
+                    onChange={handlePasswordChange}
+                    required
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Changing...' : 'Change Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2FA Modal */}
+      {show2FAModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Enable Two-Factor Authentication</h2>
+              <button
+                onClick={() => setShow2FAModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                Two-factor authentication adds an extra layer of security to your account by requiring a verification code from your phone.
+              </p>
+              <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                <h4 className="font-medium text-gray-900 mb-2">Setup Instructions:</h4>
+                <ol className="text-sm text-gray-600 space-y-1">
+                  <li>1. Download an authenticator app (Google Authenticator, Authy, etc.)</li>
+                  <li>2. Scan the QR code with your app</li>
+                  <li>3. Enter the verification code to confirm</li>
+                </ol>
+              </div>
+              <div className="flex items-center justify-end space-x-4">
+                <button
+                  onClick={() => setShow2FAModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={enable2FA}
+                  disabled={loading}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Enabling...' : 'Enable 2FA'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sessions Modal */}
+      {showSessionsModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Active Sessions</h2>
+              <button
+                onClick={() => setShowSessionsModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-4">
+                {mockSessions.map((session) => (
+                  <div key={session.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <h4 className="font-medium text-gray-900">{session.device}</h4>
+                        {session.current && (
+                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Current</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">{session.location}</p>
+                      <p className="text-xs text-gray-500">Last active: {session.lastActive}</p>
+                    </div>
+                    {!session.current && (
+                      <button className="px-3 py-1 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm">
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-red-900">Delete Account</h2>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+                <div>
+                  <h3 className="font-medium text-gray-900">This action cannot be undone</h3>
+                  <p className="text-sm text-gray-600">All your data will be permanently deleted</p>
+                </div>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you absolutely sure you want to delete your account? This will permanently remove all your farm data, 
+                crops, tasks, financial records, and cannot be recovered.
+              </p>
+              <div className="flex items-center justify-end space-x-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteAccount}
+                  disabled={loading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Deleting...' : 'Delete Account'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
