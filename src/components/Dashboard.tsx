@@ -12,14 +12,11 @@ import {
   Package,
   BarChart3,
   Plus,
-  Download,
-  Settings,
   Calendar,
   Clock,
   Users
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { exportToPDF } from '../utils/pdfExport';
 import axios from 'axios';
 
 interface WeatherData {
@@ -51,7 +48,6 @@ const Dashboard: React.FC = () => {
     cropsChange: 0
   });
   const [loading, setLoading] = useState(true);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -170,43 +166,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const handleExportDashboard = async () => {
-    try {
-      const dashboardData = [
-        { metric: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, change: `+${stats.revenueChange}%` },
-        { metric: 'Active Crops', value: stats.activeCrops, change: `+${stats.cropsChange}` },
-        { metric: 'Total Area', value: `${stats.totalArea} acres`, change: 'N/A' },
-        { metric: 'Pending Tasks', value: stats.pendingTasks, change: 'N/A' },
-        { metric: 'Weather Temperature', value: `${weather?.temperature || 'N/A'}°C`, change: 'Current' },
-        { metric: 'Weather Humidity', value: `${weather?.humidity || 'N/A'}%`, change: 'Current' }
-      ];
-
-      const summary = {
-        farmName: user?.farmName || 'Farm',
-        farmLocation: user?.farmLocation || 'Location',
-        farmSize: user?.farmSize || 0,
-        totalRevenue: stats.totalRevenue,
-        activeCrops: stats.activeCrops,
-        totalArea: stats.totalArea,
-        pendingTasks: stats.pendingTasks
-      };
-
-      await exportToPDF({
-        title: 'Dashboard Overview',
-        data: dashboardData,
-        columns: [
-          { key: 'metric', label: 'Metric', width: 200 },
-          { key: 'value', label: 'Value', width: 150 },
-          { key: 'change', label: 'Change', width: 100 }
-        ],
-        summary
-      });
-    } catch (error) {
-      console.error('Error exporting dashboard:', error);
-      alert('Error exporting dashboard. Please try again.');
-    }
-  };
-
   const recentActivities = [
     { id: 1, activity: 'Corn Field A - Irrigation completed', time: '2 hours ago', type: 'success' },
     { id: 2, activity: 'Fertilizer order placed for Wheat Field B', time: '4 hours ago', type: 'info' },
@@ -236,25 +195,9 @@ const Dashboard: React.FC = () => {
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Welcome back, {user?.firstName}! Here's what's happening on your farm.</p>
         </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={handleExportDashboard}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
-          </button>
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Today</p>
-            <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString()}</p>
-          </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-500">Today</p>
+          <p className="text-lg font-semibold text-gray-900">{new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
@@ -465,55 +408,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Quick Settings</h2>
-              <button
-                onClick={() => setShowSettingsModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <button
-                onClick={() => {
-                  setShowSettingsModal(false);
-                  window.dispatchEvent(new CustomEvent('navigateToSettings'));
-                }}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                <Users className="w-5 h-5 text-gray-600" />
-                <span>Profile Settings</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowSettingsModal(false);
-                  window.dispatchEvent(new CustomEvent('navigateToSettings', { detail: 'notifications' }));
-                }}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                <AlertTriangle className="w-5 h-5 text-gray-600" />
-                <span>Notifications</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowSettingsModal(false);
-                  window.dispatchEvent(new CustomEvent('navigateToSettings', { detail: 'preferences' }));
-                }}
-                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-              >
-                <Settings className="w-5 h-5 text-gray-600" />
-                <span>App Preferences</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -19,6 +19,7 @@ import {
   Trash2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { exportFinanceToPDF } from '../utils/pdfExport';
 import axios from 'axios';
 
 interface Transaction {
@@ -52,6 +53,11 @@ interface Budget {
   remaining: number;
 }
 
+interface BudgetForm {
+  category: string;
+  budgeted: string;
+}
+
 const FinanceManagement: React.FC = () => {
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -60,6 +66,7 @@ const FinanceManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
   const [editFormData, setEditFormData] = useState<Transaction | null>(null);
 
   const [formData, setFormData] = useState<NewTransactionForm>({
@@ -73,7 +80,7 @@ const FinanceManagement: React.FC = () => {
     paymentMethod: 'cash'
   });
 
-  const [budgets] = useState<Budget[]>([
+  const [budgets, setBudgets] = useState<Budget[]>([
     { category: 'Seeds & Plants', budgeted: 5000, spent: 2340, remaining: 2660 },
     { category: 'Fertilizers', budgeted: 3000, spent: 1875, remaining: 1125 },
     { category: 'Equipment Maintenance', budgeted: 4000, spent: 2950, remaining: 1050 },
@@ -81,6 +88,11 @@ const FinanceManagement: React.FC = () => {
     { category: 'Labor', budgeted: 8000, spent: 4200, remaining: 3800 },
     { category: 'Insurance', budgeted: 1500, spent: 1500, remaining: 0 }
   ]);
+
+  const [budgetForm, setBudgetForm] = useState<BudgetForm>({
+    category: '',
+    budgeted: ''
+  });
 
   useEffect(() => {
     fetchTransactions();
@@ -108,6 +120,11 @@ const FinanceManagement: React.FC = () => {
   const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setEditFormData(prev => prev ? { ...prev, [name]: value } : null);
+  };
+
+  const handleBudgetInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setBudgetForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -160,6 +177,20 @@ const FinanceManagement: React.FC = () => {
     }
   };
 
+  const handleBudgetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newBudget: Budget = {
+      category: budgetForm.category,
+      budgeted: parseFloat(budgetForm.budgeted),
+      spent: 0,
+      remaining: parseFloat(budgetForm.budgeted)
+    };
+    
+    setBudgets(prev => [...prev, newBudget]);
+    setShowBudgetModal(false);
+    setBudgetForm({ category: '', budgeted: '' });
+  };
+
   const handleDelete = async (transactionId: string) => {
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
     
@@ -192,6 +223,15 @@ const FinanceManagement: React.FC = () => {
   const handleEdit = (transaction: Transaction) => {
     setEditFormData(transaction);
     setShowEditModal(true);
+  };
+
+  const handleExport = async () => {
+    try {
+      await exportFinanceToPDF(transactions);
+    } catch (error) {
+      console.error('Error exporting finance data:', error);
+      alert('Error exporting data. Please try again.');
+    }
   };
 
   const totalIncome = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
@@ -238,9 +278,12 @@ const FinanceManagement: React.FC = () => {
           <p className="text-gray-600 mt-1">Track income, expenses, and budgets</p>
         </div>
         <div className="flex items-center space-x-3">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+          <button 
+            onClick={handleExport}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
             <Download className="w-4 h-4" />
-            <span>Export</span>
+            <span>Export PDF</span>
           </button>
           <button 
             onClick={() => setShowAddModal(true)}
@@ -430,7 +473,10 @@ const FinanceManagement: React.FC = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Budget Overview</h3>
-                <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors">
+                <button 
+                  onClick={() => setShowBudgetModal(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+                >
                   <Plus className="w-4 h-4" />
                   <span>Add Budget</span>
                 </button>
@@ -772,6 +818,72 @@ const FinanceManagement: React.FC = () => {
                     <Save className="w-5 h-5" />
                   )}
                   <span>{loading ? 'Updating...' : 'Update Transaction'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Budget Modal */}
+      {showBudgetModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Add New Budget</h2>
+              <button
+                onClick={() => setShowBudgetModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            </div>
+
+            <form onSubmit={handleBudgetSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <select
+                  name="category"
+                  value={budgetForm.category}
+                  onChange={handleBudgetInputChange}
+                  required
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">Select category</option>
+                  {expenseCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Budget Amount ($) *</label>
+                <input
+                  type="number"
+                  name="budgeted"
+                  value={budgetForm.budgeted}
+                  onChange={handleBudgetInputChange}
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="e.g., 5000.00"
+                />
+              </div>
+
+              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowBudgetModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Add Budget
                 </button>
               </div>
             </form>
