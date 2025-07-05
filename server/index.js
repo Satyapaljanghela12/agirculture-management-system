@@ -27,10 +27,12 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:3000',
       'https://localhost:5173',
+      'https://creative-pika-0f2778.netlify.app', // Your Netlify frontend
       process.env.FRONTEND_URL,
-      // Add your Vercel domain here
+      // Add your custom domain here if you have one
+      /\.netlify\.app$/,
       /\.vercel\.app$/,
-      /\.netlify\.app$/
+      /\.onrender\.com$/
     ];
     
     const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -44,7 +46,12 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
-      callback(null, true); // Allow all origins in production for now
+      // In production, be more strict about CORS
+      if (process.env.NODE_ENV === 'production') {
+        callback(new Error('Not allowed by CORS'));
+      } else {
+        callback(null, true);
+      }
     }
   },
   credentials: true,
@@ -127,7 +134,7 @@ app.get('/api/weather', async (req, res) => {
     }
 
     const response = await axios.get(
-      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`,
+      `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${process.env.VITE_OPENWEATHER_API_KEY}`,
       { timeout: 10000 }
     );
     
@@ -165,7 +172,7 @@ app.get('/api/weather/forecast', async (req, res) => {
     }
 
     const response = await axios.get(
-      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`,
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&units=metric&appid=${process.env.VITE_OPENWEATHER_API_KEY}`,
       { timeout: 10000 }
     );
     
@@ -227,6 +234,15 @@ app.get('/api', (req, res) => {
   });
 });
 
+// Root route for basic health check
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Agriculture Management API Server',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Enhanced error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error occurred:', {
@@ -273,11 +289,12 @@ app.use('/api/*', (req, res) => {
 });
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`MongoDB URI: ${process.env.MONGODB_URI ? 'configured' : 'using default'}`);
   console.log(`Weather API: ${process.env.VITE_OPENWEATHER_API_KEY ? 'configured' : 'not configured'}`);
+  console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'not configured'}`);
 });
 
 // Graceful shutdown

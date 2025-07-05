@@ -39,16 +39,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Determine API URL based on environment
 const getApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    // Client-side
-    if (window.location.hostname === 'localhost') {
-      return 'http://localhost:5000/api';
-    }
-    // For production, use relative URLs to work with Vercel
-    return '/api';
+  // Check if we have a custom API URL from environment variables
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
-  // Server-side fallback
-  return process.env.VITE_API_URL || 'http://localhost:5000/api';
+  
+  // For development
+  if (import.meta.env.DEV) {
+    return 'http://localhost:5000/api';
+  }
+  
+  // For production - you'll need to update this with your actual backend URL
+  return 'https://your-backend-url.onrender.com/api';
 };
 
 const API_URL = getApiUrl();
