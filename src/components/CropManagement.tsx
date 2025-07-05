@@ -5,18 +5,16 @@ import {
   Search,
   Filter,
   Calendar,
+  MapPin,
   TrendingUp,
+  AlertTriangle,
   Droplets,
   Sun,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
   Edit,
   Eye,
-  X,
-  Save,
   Trash2,
-  BarChart3
+  X,
+  Save
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -34,11 +32,12 @@ interface Crop {
   health: 'excellent' | 'good' | 'fair' | 'poor';
   irrigation: 'automated' | 'manual' | 'rain-fed';
   notes: string;
+  images?: string[];
   yield?: {
     expected?: number;
     actual?: number;
   };
-  costs?: {
+  costs: {
     seeds: number;
     fertilizer: number;
     pesticides: number;
@@ -60,7 +59,6 @@ interface NewCropForm {
   irrigation: 'automated' | 'manual' | 'rain-fed';
   notes: string;
   expectedYield: string;
-  actualYield: string;
   seedsCost: string;
   fertilizerCost: string;
   pesticidesCost: string;
@@ -76,12 +74,7 @@ const CropManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedCrop, setSelectedCrop] = useState<Crop | null>(null);
   const [editFormData, setEditFormData] = useState<Crop | null>(null);
-  const [showProgressModal, setShowProgressModal] = useState(false);
-  const [progressCrop, setProgressCrop] = useState<Crop | null>(null);
-  const [newProgress, setNewProgress] = useState('');
 
   const [formData, setFormData] = useState<NewCropForm>({
     name: '',
@@ -96,7 +89,6 @@ const CropManagement: React.FC = () => {
     irrigation: 'manual',
     notes: '',
     expectedYield: '',
-    actualYield: '',
     seedsCost: '0',
     fertilizerCost: '0',
     pesticidesCost: '0',
@@ -106,6 +98,17 @@ const CropManagement: React.FC = () => {
 
   useEffect(() => {
     fetchCrops();
+    
+    // Listen for the custom event from dashboard
+    const handleOpenModal = () => {
+      setShowAddModal(true);
+    };
+    
+    window.addEventListener('openCropModal', handleOpenModal);
+    
+    return () => {
+      window.removeEventListener('openCropModal', handleOpenModal);
+    };
   }, []);
 
   const fetchCrops = async () => {
@@ -145,13 +148,12 @@ const CropManagement: React.FC = () => {
         expectedHarvest: formData.expectedHarvest,
         status: formData.status,
         area: parseFloat(formData.area),
-        progress: parseFloat(formData.progress),
+        progress: parseInt(formData.progress),
         health: formData.health,
         irrigation: formData.irrigation,
         notes: formData.notes,
         yield: {
-          expected: formData.expectedYield ? parseFloat(formData.expectedYield) : undefined,
-          actual: formData.actualYield ? parseFloat(formData.actualYield) : undefined
+          expected: formData.expectedYield ? parseFloat(formData.expectedYield) : undefined
         },
         costs: {
           seeds: parseFloat(formData.seedsCost),
@@ -226,7 +228,6 @@ const CropManagement: React.FC = () => {
       irrigation: 'manual',
       notes: '',
       expectedYield: '',
-      actualYield: '',
       seedsCost: '0',
       fertilizerCost: '0',
       pesticidesCost: '0',
@@ -238,42 +239,6 @@ const CropManagement: React.FC = () => {
   const handleEdit = (crop: Crop) => {
     setEditFormData(crop);
     setShowEditModal(true);
-  };
-
-  const handleViewDetails = (crop: Crop) => {
-    setSelectedCrop(crop);
-    setShowDetailsModal(true);
-  };
-
-  const handleUpdateProgress = (crop: Crop) => {
-    setProgressCrop(crop);
-    setNewProgress(crop.progress.toString());
-    setShowProgressModal(true);
-  };
-
-  const submitProgressUpdate = async () => {
-    if (!progressCrop || !progressCrop._id) return;
-    
-    setLoading(true);
-    try {
-      const updatedCrop = {
-        ...progressCrop,
-        progress: parseFloat(newProgress)
-      };
-
-      await axios.put(`/crops/${progressCrop._id}`, updatedCrop, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      await fetchCrops();
-      setShowProgressModal(false);
-      setProgressCrop(null);
-      setNewProgress('');
-    } catch (error) {
-      console.error('Error updating progress:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getStatusColor = (status: string) => {
@@ -290,26 +255,16 @@ const CropManagement: React.FC = () => {
   const getHealthColor = (health: string) => {
     switch (health) {
       case 'excellent': return 'text-green-600';
-      case 'good': return 'text-blue-600';
+      case 'good': return 'text-emerald-600';
       case 'fair': return 'text-yellow-600';
       case 'poor': return 'text-red-600';
       default: return 'text-gray-600';
     }
   };
 
-  const getHealthIcon = (health: string) => {
-    switch (health) {
-      case 'excellent': return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'good': return <CheckCircle className="w-4 h-4 text-blue-600" />;
-      case 'fair': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      case 'poor': return <AlertTriangle className="w-4 h-4 text-red-600" />;
-      default: return <Clock className="w-4 h-4 text-gray-600" />;
-    }
-  };
-
   const getDaysToHarvest = (expectedHarvest: string) => {
-    const today = new Date();
     const harvestDate = new Date(expectedHarvest);
+    const today = new Date();
     const diffTime = harvestDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -323,12 +278,26 @@ const CropManagement: React.FC = () => {
     return matchesSearch && matchesFilter;
   });
 
+  const cropStats = {
+    total: crops.length,
+    planted: crops.filter(c => c.status === 'planted').length,
+    growing: crops.filter(c => c.status === 'growing').length,
+    ready: crops.filter(c => c.status === 'ready').length,
+    harvested: crops.filter(c => c.status === 'harvested').length,
+    totalArea: crops.reduce((sum, crop) => sum + crop.area, 0)
+  };
+
+  const cropTypes = [
+    'Tomatoes', 'Corn', 'Wheat', 'Rice', 'Soybeans', 'Potatoes', 'Carrots', 'Lettuce', 
+    'Onions', 'Peppers', 'Cucumbers', 'Beans', 'Peas', 'Spinach', 'Cabbage', 'Other'
+  ];
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Crop Management</h1>
-          <p className="text-gray-600 mt-1">Monitor and manage your crop production</p>
+          <p className="text-gray-600 mt-1">Monitor and manage your crop lifecycle</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
@@ -340,15 +309,26 @@ const CropManagement: React.FC = () => {
       </div>
 
       {/* Statistics Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Crops</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{crops.length}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.total}</p>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <Sprout className="w-6 h-6 text-green-600" />
+            <div className="p-3 bg-blue-100 rounded-full">
+              <Sprout className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Planted</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.planted}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-full">
+              <Calendar className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
@@ -356,21 +336,32 @@ const CropManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Growing</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{crops.filter(c => c.status === 'growing').length}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.growing}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
+            <div className="p-3 bg-green-100 rounded-full">
+              <TrendingUp className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Ready to Harvest</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{crops.filter(c => c.status === 'ready').length}</p>
+              <p className="text-sm font-medium text-gray-600">Ready</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.ready}</p>
             </div>
             <div className="p-3 bg-orange-100 rounded-full">
-              <Calendar className="w-6 h-6 text-orange-600" />
+              <AlertTriangle className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Harvested</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.harvested}</p>
+            </div>
+            <div className="p-3 bg-gray-100 rounded-full">
+              <Calendar className="w-6 h-6 text-gray-600" />
             </div>
           </div>
         </div>
@@ -378,10 +369,11 @@ const CropManagement: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Area</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{crops.reduce((sum, crop) => sum + crop.area, 0)} acres</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{cropStats.totalArea}</p>
+              <p className="text-xs text-gray-500">acres</p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <BarChart3 className="w-6 h-6 text-purple-600" />
+            <div className="p-3 bg-emerald-100 rounded-full">
+              <MapPin className="w-6 h-6 text-emerald-600" />
             </div>
           </div>
         </div>
@@ -422,6 +414,7 @@ const CropManagement: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredCrops.map((crop) => {
           const daysToHarvest = getDaysToHarvest(crop.expectedHarvest);
+          const totalCost = Object.values(crop.costs).reduce((sum, cost) => sum + cost, 0);
           
           return (
             <div key={crop._id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
@@ -438,61 +431,70 @@ const CropManagement: React.FC = () => {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Field</span>
-                    <span className="font-medium text-gray-900">{crop.field}</span>
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">{crop.field}</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">{crop.area} acres</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Area</span>
-                    <span className="font-medium text-gray-900">{crop.area} acres</span>
-                  </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Health</span>
-                    <div className="flex items-center space-x-1">
-                      {getHealthIcon(crop.health)}
-                      <span className={`font-medium ${getHealthColor(crop.health)}`}>
-                        {crop.health.charAt(0).toUpperCase() + crop.health.slice(1)}
-                      </span>
-                    </div>
+                    <span className={`text-sm font-medium ${getHealthColor(crop.health)}`}>
+                      {crop.health.charAt(0).toUpperCase() + crop.health.slice(1)}
+                    </span>
                   </div>
-                </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Growth Progress</span>
-                    <span className="text-sm font-medium text-gray-900">{crop.progress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${crop.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Days to Harvest */}
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Calendar className="w-4 h-4 text-blue-600" />
-                      <span className="text-sm font-medium text-blue-800">
-                        {daysToHarvest > 0 ? `${daysToHarvest} days to harvest` : 
-                         daysToHarvest === 0 ? 'Harvest today!' : 
-                         `${Math.abs(daysToHarvest)} days overdue`}
+                    <span className="text-sm text-gray-600">Irrigation</span>
+                    <div className="flex items-center space-x-1">
+                      <Droplets className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {crop.irrigation.charAt(0).toUpperCase() + crop.irrigation.slice(1)}
                       </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Progress</span>
+                      <span className="text-sm font-medium text-gray-900">{crop.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${crop.progress}%` }}
+                      ></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Irrigation Status */}
-                <div className="flex items-center space-x-2 mb-4">
-                  <Droplets className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm text-gray-600">
-                    {crop.irrigation.charAt(0).toUpperCase() + crop.irrigation.slice(1)} irrigation
-                  </span>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <Calendar className="w-5 h-5 text-gray-500 mx-auto mb-1" />
+                    <p className="text-xs text-gray-600">Planted</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(crop.plantedDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="text-center p-3 bg-gray-50 rounded-lg">
+                    <Sun className="w-5 h-5 text-orange-500 mx-auto mb-1" />
+                    <p className="text-xs text-gray-600">Harvest</p>
+                    <p className={`text-sm font-medium ${daysToHarvest <= 7 ? 'text-orange-600' : 'text-gray-900'}`}>
+                      {daysToHarvest > 0 ? `${daysToHarvest} days` : 'Ready'}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Notes */}
+                {totalCost > 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-blue-700">Total Investment</span>
+                      <span className="text-sm font-bold text-blue-900">${totalCost.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+
                 {crop.notes && (
                   <div className="mb-4">
                     <div className="flex items-start space-x-2">
@@ -502,23 +504,12 @@ const CropManagement: React.FC = () => {
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <button 
-                    onClick={() => handleViewDetails(crop)}
-                    className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors"
-                  >
+                  <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 transition-colors">
                     <Eye className="w-4 h-4" />
                     <span className="text-sm font-medium">View Details</span>
                   </button>
                   <div className="flex items-center space-x-2">
-                    <button 
-                      onClick={() => handleUpdateProgress(crop)}
-                      className="flex items-center space-x-1 text-green-600 hover:text-green-700 transition-colors px-3 py-1 rounded-lg hover:bg-green-50"
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-sm font-medium">Update Progress</span>
-                    </button>
                     <button 
                       onClick={() => handleEdit(crop)}
                       className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -568,15 +559,18 @@ const CropManagement: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Crop Name *</label>
-                    <input
-                      type="text"
+                    <select
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., Tomatoes"
-                    />
+                    >
+                      <option value="">Select crop type</option>
+                      {cropTypes.map(crop => (
+                        <option key={crop} value={crop}>{crop}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Variety *</label>
@@ -587,7 +581,7 @@ const CropManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., Cherry Tomatoes"
+                      placeholder="e.g., Cherry Tomatoes, Sweet Corn"
                     />
                   </div>
                   <div>
@@ -599,7 +593,7 @@ const CropManagement: React.FC = () => {
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., Field A"
+                      placeholder="e.g., Field A, North Field"
                     />
                   </div>
                   <div>
@@ -616,6 +610,13 @@ const CropManagement: React.FC = () => {
                       placeholder="e.g., 2.5"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Planting Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Planting Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Planted Date *</label>
                     <input
@@ -638,13 +639,6 @@ const CropManagement: React.FC = () => {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-              </div>
-
-              {/* Status and Health */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Status and Health</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <select
@@ -661,7 +655,26 @@ const CropManagement: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Health</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
+                    <input
+                      type="number"
+                      name="progress"
+                      value={formData.progress}
+                      onChange={handleInputChange}
+                      min="0"
+                      max="100"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Health and Care */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Health and Care</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Health Status</label>
                     <select
                       name="health"
                       value={formData.health}
@@ -675,7 +688,7 @@ const CropManagement: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Irrigation</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Irrigation Method</label>
                     <select
                       name="irrigation"
                       value={formData.irrigation}
@@ -687,28 +700,8 @@ const CropManagement: React.FC = () => {
                       <option value="rain-fed">Rain-fed</option>
                     </select>
                   </div>
-                </div>
-              </div>
-
-              {/* Progress and Yield */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Progress and Yield</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
-                    <input
-                      type="number"
-                      name="progress"
-                      value={formData.progress}
-                      onChange={handleInputChange}
-                      min="0"
-                      max="100"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 25"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Expected Yield (tons)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Expected Yield (optional)</label>
                     <input
                       type="number"
                       name="expectedYield"
@@ -717,20 +710,7 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.1"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 5.2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Actual Yield (tons)</label>
-                    <input
-                      type="number"
-                      name="actualYield"
-                      value={formData.actualYield}
-                      onChange={handleInputChange}
-                      min="0"
-                      step="0.1"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 4.8"
+                      placeholder="e.g., 1500 (lbs/acre)"
                     />
                   </div>
                 </div>
@@ -738,10 +718,10 @@ const CropManagement: React.FC = () => {
 
               {/* Cost Tracking */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Tracking ($)</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost Tracking</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Seeds</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Seeds Cost ($)</label>
                     <input
                       type="number"
                       name="seedsCost"
@@ -750,11 +730,10 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.01"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 150.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Fertilizer</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Fertilizer Cost ($)</label>
                     <input
                       type="number"
                       name="fertilizerCost"
@@ -763,11 +742,10 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.01"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 300.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Pesticides</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pesticides Cost ($)</label>
                     <input
                       type="number"
                       name="pesticidesCost"
@@ -776,11 +754,10 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.01"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 75.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Labor</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Labor Cost ($)</label>
                     <input
                       type="number"
                       name="laborCost"
@@ -789,11 +766,10 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.01"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 500.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Other</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Other Costs ($)</label>
                     <input
                       type="number"
                       name="otherCost"
@@ -802,7 +778,6 @@ const CropManagement: React.FC = () => {
                       min="0"
                       step="0.01"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="e.g., 100.00"
                     />
                   </div>
                 </div>
@@ -890,6 +865,18 @@ const CropManagement: React.FC = () => {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
+                  <input
+                    type="number"
+                    name="progress"
+                    value={editFormData.progress}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    max="100"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Health</label>
                   <select
                     name="health"
@@ -902,18 +889,6 @@ const CropManagement: React.FC = () => {
                     <option value="fair">Fair</option>
                     <option value="poor">Poor</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Progress (%)</label>
-                  <input
-                    type="number"
-                    name="progress"
-                    value={editFormData.progress}
-                    onChange={handleEditInputChange}
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
                 </div>
               </div>
 
@@ -950,229 +925,6 @@ const CropManagement: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* View Details Modal */}
-      {showDetailsModal && selectedCrop && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Crop Details - {selectedCrop.name}</h2>
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Basic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Crop Name:</span>
-                      <span className="font-medium">{selectedCrop.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Variety:</span>
-                      <span className="font-medium">{selectedCrop.variety}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Field:</span>
-                      <span className="font-medium">{selectedCrop.field}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Area:</span>
-                      <span className="font-medium">{selectedCrop.area} acres</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedCrop.status)}`}>
-                        {selectedCrop.status.charAt(0).toUpperCase() + selectedCrop.status.slice(1)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Timeline</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Planted Date:</span>
-                      <span className="font-medium">{new Date(selectedCrop.plantedDate).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Expected Harvest:</span>
-                      <span className="font-medium">{new Date(selectedCrop.expectedHarvest).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Days to Harvest:</span>
-                      <span className="font-medium">{getDaysToHarvest(selectedCrop.expectedHarvest)} days</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress and Health */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Progress</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Growth Progress:</span>
-                      <span className="font-medium">{selectedCrop.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-green-500 h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${selectedCrop.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Health & Care</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Health Status:</span>
-                      <div className="flex items-center space-x-2">
-                        {getHealthIcon(selectedCrop.health)}
-                        <span className={`font-medium ${getHealthColor(selectedCrop.health)}`}>
-                          {selectedCrop.health.charAt(0).toUpperCase() + selectedCrop.health.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Irrigation:</span>
-                      <span className="font-medium">{selectedCrop.irrigation.charAt(0).toUpperCase() + selectedCrop.irrigation.slice(1)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Yield Information */}
-              {(selectedCrop.yield?.expected || selectedCrop.yield?.actual) && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Yield Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {selectedCrop.yield?.expected && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Expected Yield:</span>
-                        <span className="font-medium">{selectedCrop.yield.expected} tons</span>
-                      </div>
-                    )}
-                    {selectedCrop.yield?.actual && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Actual Yield:</span>
-                        <span className="font-medium">{selectedCrop.yield.actual} tons</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Cost Breakdown */}
-              {selectedCrop.costs && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Cost Breakdown</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Seeds:</span>
-                      <span className="font-medium">${selectedCrop.costs.seeds}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fertilizer:</span>
-                      <span className="font-medium">${selectedCrop.costs.fertilizer}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Pesticides:</span>
-                      <span className="font-medium">${selectedCrop.costs.pesticides}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Labor:</span>
-                      <span className="font-medium">${selectedCrop.costs.labor}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Other:</span>
-                      <span className="font-medium">${selectedCrop.costs.other}</span>
-                    </div>
-                    <div className="flex justify-between font-semibold">
-                      <span className="text-gray-900">Total:</span>
-                      <span className="text-gray-900">
-                        ${(selectedCrop.costs.seeds + selectedCrop.costs.fertilizer + selectedCrop.costs.pesticides + selectedCrop.costs.labor + selectedCrop.costs.other).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {selectedCrop.notes && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Notes</h3>
-                  <p className="text-gray-700 bg-gray-50 p-4 rounded-lg">{selectedCrop.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Update Progress Modal */}
-      {showProgressModal && progressCrop && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900">Update Progress</h2>
-              <button
-                onClick={() => setShowProgressModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">{progressCrop.name}</h3>
-                <p className="text-sm text-gray-600">Current progress: {progressCrop.progress}%</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">New Progress (%)</label>
-                <input
-                  type="number"
-                  value={newProgress}
-                  onChange={(e) => setNewProgress(e.target.value)}
-                  min="0"
-                  max="100"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="Enter new progress percentage"
-                />
-              </div>
-
-              <div className="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setShowProgressModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={submitProgressUpdate}
-                  disabled={loading || !newProgress}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Updating...' : 'Update'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
