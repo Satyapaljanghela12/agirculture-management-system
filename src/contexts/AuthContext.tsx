@@ -37,9 +37,9 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Determine API URL based on environment
+// Get API URL from environment variables
 const getApiUrl = () => {
-  // Check if we have a custom API URL from environment variables
+  // Use environment variable if available
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
@@ -49,8 +49,8 @@ const getApiUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // For production - you'll need to update this with your actual backend URL
-  return 'https://your-backend-url.onrender.com/api';
+  // Production fallback to your Render URL
+  return 'https://agirculture-management-system.onrender.com/api';
 };
 
 const API_URL = getApiUrl();
