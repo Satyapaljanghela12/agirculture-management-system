@@ -33,29 +33,13 @@ A comprehensive farm management system built with React, Node.js, Express, and M
 
 ## 🛠️ Environment Variables
 
-Create a `.env` file in the root directory with the following variables:
+The frontend is configured to connect to the backend at:
+`https://agirculture-management-system.onrender.com/api`
 
-```env
-# Database
-MONGODB_URI=your_mongodb_connection_string
-
-# JWT Secret (use a strong, random string)
-JWT_SECRET=your_super_secret_jwt_key_here
-
-# Weather API (optional)
-VITE_OPENWEATHER_API_KEY=your_openweathermap_api_key
-
-# Server Configuration
-PORT=5000
-NODE_ENV=production
-
-# Frontend URL (for CORS)
-FRONTEND_URL=https://your-domain.vercel.app
-
-# Default location for weather (optional)
-VITE_DEFAULT_LAT=40.7128
-VITE_DEFAULT_LON=-74.0060
-VITE_DEFAULT_CITY=New York
+For local development, create a `.env` file with:
+```
+VITE_API_URL=https://agirculture-management-system.onrender.com/api
+VITE_OPENWEATHER_API_KEY=your_openweather_api_key_optional
 ```
 
 ## 🏃‍♂️ Local Development

@@ -49,7 +49,7 @@ const getApiUrl = () => {
     return 'http://localhost:5000/api';
   }
   
-  // Production fallback to your Render URL
+  // Production fallback - use your actual backend URL
   return 'https://agirculture-management-system.onrender.com/api';
 };
 
