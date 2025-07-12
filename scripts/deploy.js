@@ -9,7 +9,7 @@ const envPath = path.join(__dirname, '..', '.env');
 if (!fs.existsSync(envPath)) {
   console.log('❌ .env file not found!');
   console.log('📝 Create .env file with your backend URL:');
-  console.log('   VITE_API_URL=https://your-backend-url.onrender.com/api\n');
+  console.log('   VITE_API_URL=https://agirculture-management-system.onrender.com\n');
 } else {
   const envContent = fs.readFileSync(envPath, 'utf8');
   if (envContent.includes('your-backend-url')) {

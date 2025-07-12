@@ -77,7 +77,7 @@ app.use((req, res, next) => {
 // MongoDB Connection with better error handling
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/agriculture_management';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://ssb:pankaj11@blinkeyit.youg5oa.mongodb.net/?retryWrites=true&w=majority&appName=blinkeyit';
     console.log('Attempting to connect to MongoDB...');
     
     await mongoose.connect(mongoURI, {
