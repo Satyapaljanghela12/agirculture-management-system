@@ -5,6 +5,7 @@
 [build.environment]
   NODE_VERSION = "18"
   VITE_API_URL = "https://agirculture-management-system.onrender.com/api"
+  VITE_OPENWEATHER_API_KEY = "32b3b56df7655a06cb6f450a7ac06616"
 
 [[redirects]]
   from = "/*"

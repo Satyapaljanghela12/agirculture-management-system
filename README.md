@@ -33,13 +33,23 @@ A comprehensive farm management system built with React, Node.js, Express, and M
 
 ## 🛠️ Environment Variables
 
-The frontend is configured to connect to the backend at:
-`https://agirculture-management-system.onrender.com/api`
-
-For local development, create a `.env` file with:
+### Frontend Environment Variables (.env)
 ```
 VITE_API_URL=https://agirculture-management-system.onrender.com/api
-VITE_OPENWEATHER_API_KEY=your_openweather_api_key_optional
+VITE_OPENWEATHER_API_KEY=32b3b56df7655a06cb6f450a7ac06616
+VITE_DEFAULT_LAT=40.7128
+VITE_DEFAULT_LON=-74.0060
+VITE_DEFAULT_CITY=New York
+```
+
+### Backend Environment Variables (Render)
+```
+MONGODB_URI=mongodb+srv://ssb:pankaj11@blinkeyit.youg5oa.mongodb.net/?retryWrites=true&w=majority&appName=blinkeyit
+JWT_SECRET=d08f24691432cf9e385a0f83ade44d05
+VITE_OPENWEATHER_API_KEY=32b3b56df7655a06cb6f450a7ac06616
+PORT=5000
+NODE_ENV=production
+FRONTEND_URL=https://your-netlify-domain.netlify.app
 ```
 
 ## 🏃‍♂️ Local Development

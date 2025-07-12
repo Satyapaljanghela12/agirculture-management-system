@@ -27,7 +27,7 @@ const corsOptions = {
       'http://localhost:5173',
       'http://localhost:3000',
       'https://localhost:5173',
-      'https://creative-pika-0f2778.netlify.app', // Your Netlify frontend
+      'https://creative-pika-0f2778.netlify.app',
       process.env.FRONTEND_URL,
       // Add your custom domain here if you have one
       /\.netlify\.app$/,
