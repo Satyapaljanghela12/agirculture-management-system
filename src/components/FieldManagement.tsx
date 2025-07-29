@@ -99,17 +99,58 @@ const FieldManagement: React.FC = () => {
   }, []);
 
   const fetchFields = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/fields', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setFields(response.data);
-    } catch (error) {
-      console.error('Error fetching fields:', error);
-    } finally {
+    setLoading(true);
+    // Mock data for demo
+    setTimeout(() => {
+      setFields([
+        {
+          _id: '1',
+          name: 'North Field',
+          area: 12.5,
+          location: {
+            address: '123 Farm Road, Demo City',
+            coordinates: { latitude: 40.7128, longitude: -74.0060 }
+          },
+          soilType: 'Loamy',
+          soilPH: 6.8,
+          moisture: 65,
+          temperature: 24,
+          nutrients: {
+            nitrogen: 75,
+            phosphorus: 68,
+            potassium: 82
+          },
+          currentCrop: 'Tomatoes',
+          status: 'active',
+          lastTested: new Date().toISOString(),
+          notes: 'Excellent soil conditions',
+          irrigationSystem: 'drip'
+        },
+        {
+          _id: '2',
+          name: 'South Field',
+          area: 8.3,
+          location: {
+            address: '456 Farm Road, Demo City'
+          },
+          soilType: 'Clay Loam',
+          soilPH: 7.2,
+          moisture: 58,
+          temperature: 22,
+          nutrients: {
+            nitrogen: 62,
+            phosphorus: 71,
+            potassium: 69
+          },
+          currentCrop: 'Corn',
+          status: 'active',
+          lastTested: new Date().toISOString(),
+          notes: 'Good drainage, suitable for corn',
+          irrigationSystem: 'sprinkler'
+        }
+      ]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const getStatusColor = (status: string) => {

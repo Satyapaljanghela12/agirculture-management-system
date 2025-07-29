@@ -79,17 +79,39 @@ const TaskManagement: React.FC = () => {
   }, []);
 
   const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/tasks', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setTasks(response.data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
+    setLoading(true);
+    // Mock data for demo
+    setTimeout(() => {
+      setTasks([
+        {
+          _id: '1',
+          title: 'Harvest Tomatoes',
+          description: 'Harvest ripe tomatoes from Field A',
+          priority: 'high',
+          status: 'pending',
+          assignee: 'Demo User',
+          dueDate: '2024-01-30',
+          field: 'Field A',
+          category: 'Harvesting',
+          estimatedHours: 8,
+          notes: 'Check for ripeness before harvesting'
+        },
+        {
+          _id: '2',
+          title: 'Equipment Maintenance',
+          description: 'Service the main tractor',
+          priority: 'medium',
+          status: 'in-progress',
+          assignee: 'Demo User',
+          dueDate: '2024-02-05',
+          category: 'Equipment Maintenance',
+          estimatedHours: 4,
+          actualHours: 2,
+          notes: 'Oil change and filter replacement needed'
+        }
+      ]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

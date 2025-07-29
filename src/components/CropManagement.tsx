@@ -139,43 +139,36 @@ const CropManagement: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     
-    try {
-      const newCrop = {
-        name: formData.name,
-        variety: formData.variety,
-        field: formData.field,
-        plantedDate: formData.plantedDate,
-        expectedHarvest: formData.expectedHarvest,
-        status: formData.status,
-        area: parseFloat(formData.area),
-        progress: parseInt(formData.progress),
-        health: formData.health,
-        irrigation: formData.irrigation,
-        notes: formData.notes,
-        yield: {
-          expected: formData.expectedYield ? parseFloat(formData.expectedYield) : undefined
-        },
-        costs: {
-          seeds: parseFloat(formData.seedsCost),
-          fertilizer: parseFloat(formData.fertilizerCost),
-          pesticides: parseFloat(formData.pesticidesCost),
-          labor: parseFloat(formData.laborCost),
-          other: parseFloat(formData.otherCost)
-        }
-      };
+    const newCrop = {
+      _id: Date.now().toString(),
+      name: formData.name,
+      variety: formData.variety,
+      field: formData.field,
+      plantedDate: formData.plantedDate,
+      expectedHarvest: formData.expectedHarvest,
+      status: formData.status,
+      area: parseFloat(formData.area),
+      progress: parseInt(formData.progress),
+      health: formData.health,
+      irrigation: formData.irrigation,
+      notes: formData.notes,
+      yield: {
+        expected: formData.expectedYield ? parseFloat(formData.expectedYield) : undefined
+      },
+      costs: {
+        seeds: parseFloat(formData.seedsCost),
+        fertilizer: parseFloat(formData.fertilizerCost),
+        pesticides: parseFloat(formData.pesticidesCost),
+        labor: parseFloat(formData.laborCost),
+        other: parseFloat(formData.otherCost)
+      }
+    };
 
-      await axios.post('/crops', newCrop, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      await fetchCrops();
-      setShowAddModal(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error creating crop:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Add to local state for demo
+    setCrops(prev => [...prev, newCrop]);
+    setShowAddModal(false);
+    resetForm();
+    setLoading(false);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -183,35 +176,22 @@ const CropManagement: React.FC = () => {
     if (!editFormData || !editFormData._id) return;
     
     setLoading(true);
-    try {
-      await axios.put(`/crops/${editFormData._id}`, editFormData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      await fetchCrops();
-      setShowEditModal(false);
-      setEditFormData(null);
-    } catch (error) {
-      console.error('Error updating crop:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Update local state for demo
+    setCrops(prev => prev.map(crop => 
+      crop._id === editFormData._id ? editFormData : crop
+    ));
+    setShowEditModal(false);
+    setEditFormData(null);
+    setLoading(false);
   };
 
   const handleDelete = async (cropId: string) => {
     if (!window.confirm('Are you sure you want to delete this crop?')) return;
     
     setLoading(true);
-    try {
-      await axios.delete(`/crops/${cropId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      await fetchCrops();
-    } catch (error) {
-      console.error('Error deleting crop:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Remove from local state for demo
+    setCrops(prev => prev.filter(crop => crop._id !== cropId));
+    setLoading(false);
   };
 
   const resetForm = () => {
