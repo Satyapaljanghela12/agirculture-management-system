@@ -84,17 +84,43 @@ const InventoryManagement: React.FC = () => {
   }, []);
 
   const fetchInventory = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/inventory', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setInventory(response.data);
-    } catch (error) {
-      console.error('Error fetching inventory:', error);
-    } finally {
+    setLoading(true);
+    // Mock data for demo
+    setTimeout(() => {
+      setInventory([
+        {
+          _id: '1',
+          name: 'Organic Fertilizer NPK 10-10-10',
+          category: 'Fertilizers',
+          currentStock: 15,
+          minStock: 5,
+          maxStock: 50,
+          unit: 'bags (50kg)',
+          location: 'Storage Shed A',
+          supplier: 'GreenGrow Supplies',
+          costPerUnit: 45.99,
+          lastRestocked: '2024-01-15',
+          expiryDate: '2025-01-15',
+          notes: 'Store in dry place'
+        },
+        {
+          _id: '2',
+          name: 'Tomato Seeds - Cherry Variety',
+          category: 'Seeds',
+          currentStock: 3,
+          minStock: 5,
+          maxStock: 20,
+          unit: 'packets',
+          location: 'Storage Shed B',
+          supplier: 'Premium Seeds Co.',
+          costPerUnit: 12.50,
+          lastRestocked: '2024-01-10',
+          expiryDate: '2025-12-31',
+          notes: 'High germination rate'
+        }
+      ]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
