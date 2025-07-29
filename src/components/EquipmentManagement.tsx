@@ -90,17 +90,42 @@ const EquipmentManagement: React.FC = () => {
   }, []);
 
   const fetchEquipment = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/equipment', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEquipment(response.data);
-    } catch (error) {
-      console.error('Error fetching equipment:', error);
-    } finally {
+    setLoading(true);
+    // Mock data for demo
+    setTimeout(() => {
+      setEquipment([
+        {
+          _id: '1',
+          name: 'Main Tractor',
+          type: 'Tractor',
+          model: 'John Deere 6120M',
+          year: 2020,
+          status: 'active',
+          location: 'Equipment Shed A',
+          hoursUsed: 1247,
+          lastMaintenance: '2024-01-01',
+          nextMaintenance: '2024-02-01',
+          fuelLevel: 78,
+          maintenanceCost: 2450,
+          notes: 'Regular maintenance required'
+        },
+        {
+          _id: '2',
+          name: 'Irrigation Pump',
+          type: 'Irrigation',
+          model: 'AquaFlow 2000',
+          year: 2019,
+          status: 'maintenance',
+          location: 'Pump House',
+          hoursUsed: 3200,
+          lastMaintenance: '2024-01-10',
+          nextMaintenance: '2024-01-25',
+          maintenanceCost: 850,
+          notes: 'Scheduled maintenance in progress'
+        }
+      ]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
