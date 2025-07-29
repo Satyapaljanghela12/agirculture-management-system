@@ -197,19 +197,12 @@ const Settings: React.FC = () => {
     setLoading(true);
     setMessage(null);
 
-    try {
-      await axios.put('/user/profile', profileData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
+    // Mock save for demo
+    setTimeout(() => {
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
-    } finally {
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const saveNotificationSettings = async () => {

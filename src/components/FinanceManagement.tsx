@@ -99,17 +99,44 @@ const FinanceManagement: React.FC = () => {
   }, []);
 
   const fetchTransactions = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('/finance/transactions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setTransactions(response.data);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
+    setLoading(true);
+    // Mock data for demo
+    setTimeout(() => {
+      setTransactions([
+        {
+          _id: '1',
+          date: '2024-01-20',
+          description: 'Tomato harvest sale',
+          category: 'Crop Sales',
+          type: 'income',
+          amount: 2500,
+          field: 'Field A',
+          notes: 'Sold to local market',
+          paymentMethod: 'bank_transfer'
+        },
+        {
+          _id: '2',
+          date: '2024-01-18',
+          description: 'Fertilizer purchase',
+          category: 'Fertilizers',
+          type: 'expense',
+          amount: 450,
+          notes: 'Organic NPK fertilizer',
+          paymentMethod: 'cash'
+        },
+        {
+          _id: '3',
+          date: '2024-01-15',
+          description: 'Equipment maintenance',
+          category: 'Equipment Maintenance',
+          type: 'expense',
+          amount: 850,
+          notes: 'Tractor service and oil change',
+          paymentMethod: 'credit_card'
+        }
+      ]);
       setLoading(false);
-    }
+    }, 1000);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
