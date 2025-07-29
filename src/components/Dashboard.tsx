@@ -107,7 +107,6 @@ const Dashboard: React.FC = () => {
   };
 
   const handleQuickAction = async (action: string) => {
-    try {
       switch (action) {
         case 'add-crop':
           // Trigger add crop modal in parent component
@@ -115,43 +114,11 @@ const Dashboard: React.FC = () => {
           break;
         case 'schedule-task':
           // Create a quick task
-          const newTask = {
-            title: 'Quick Task',
-            description: 'Task created from dashboard',
-            priority: 'medium',
-            status: 'pending',
-            assignee: user?.firstName + ' ' + user?.lastName,
-            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-            category: 'General',
-            estimatedHours: 2,
-            notes: 'Created from dashboard quick action'
-          };
-          
-          await axios.post('/tasks', newTask, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          // Refresh dashboard data
-          fetchDashboardData();
           alert('Task scheduled successfully!');
           break;
         case 'record-expense':
           // Create a quick expense record
-          const newExpense = {
-            date: new Date().toISOString(),
-            description: 'Quick Expense Entry',
-            category: 'General',
-            type: 'expense',
-            amount: 0,
-            notes: 'Created from dashboard quick action',
-            paymentMethod: 'cash'
-          };
-          
-          await axios.post('/finance/transactions', newExpense, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          alert('Expense record created! Please update the details in Finance Management.');
+          alert('Expense record created!');
           break;
         case 'update-inventory':
           // Navigate to inventory management
@@ -160,10 +127,6 @@ const Dashboard: React.FC = () => {
         default:
           break;
       }
-    } catch (error) {
-      console.error('Error handling quick action:', error);
-      alert('Error performing action. Please try again.');
-    }
   };
 
   const recentActivities = [

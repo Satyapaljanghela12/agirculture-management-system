@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider } from './contexts/AuthContext';
-import AuthWrapper from './components/auth/AuthWrapper';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CropManagement from './components/CropManagement';
@@ -15,7 +13,7 @@ import Settings from './components/Settings';
 import Chatbot from './components/Chatbot';
 import { MessageCircle } from 'lucide-react';
 
-function AppContent() {
+function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -98,16 +96,6 @@ function AppContent() {
         onToggle={() => setIsChatbotOpen(!isChatbotOpen)} 
       />
     </div>
-  );
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <AuthWrapper>
-        <AppContent />
-      </AuthWrapper>
-    </AuthProvider>
   );
 }
 
