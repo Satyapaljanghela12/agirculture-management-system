@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from './contexts/AuthContext';
+import AuthWrapper from './components/AuthWrapper';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CropManagement from './components/CropManagement';
@@ -14,6 +16,7 @@ import Chatbot from './components/Chatbot';
 import { MessageCircle } from 'lucide-react';
 
 function App() {
+  const { isAuthenticated, loading } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
 
@@ -44,6 +47,24 @@ function App() {
     };
   }, []);
 
+  // Show loading spinner while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth pages if not authenticated
+  if (!isAuthenticated) {
+    return <AuthWrapper />;
+  }
+
+  // Show main app if authenticated
   const renderActiveSection = () => {
     switch (activeSection) {
       case 'dashboard':

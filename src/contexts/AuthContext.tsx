@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
 interface User {
   _id: string;
@@ -13,6 +14,17 @@ interface User {
   lastLogin: string;
 }
 
+interface RegisterData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  farmName: string;
+  farmLocation: string;
+  farmSize: number;
+  phoneNumber?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -23,38 +35,117 @@ interface AuthContextType {
   isAuthenticated: boolean;
 }
 
+// Get API URL from environment or use fallback
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Fallback URLs for different environments
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  
+  // Production fallback
+  return 'https://agirculture-management-system.onrender.com/api';
+};
+
+// Configure axios defaults
+axios.defaults.baseURL = getApiUrl();
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Mock user data for demo purposes
-  const [user, setUser] = useState<User | null>({
-    _id: 'demo-user-id',
-    firstName: 'Demo',
-    lastName: 'User',
-    email: 'demo@agrimanage.com',
-    farmName: 'Demo Farm',
-    farmLocation: 'Demo Location',
-    farmSize: 100,
-    phoneNumber: '+1-555-0123',
-    role: 'owner',
-    lastLogin: new Date().toISOString()
-  });
-  const [token, setToken] = useState<string | null>('demo-token');
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    // Check for existing token on app load
+    const savedToken = localStorage.getItem('authToken');
+    const savedUser = localStorage.getItem('authUser');
+    
+    if (savedToken && savedUser) {
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+        // Set axios default header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      } catch (error) {
+        console.error('Error parsing saved user data:', error);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+      }
+    }
+    
+    setLoading(false);
+  }, []);
+
   const login = async (email: string, password: string) => {
-    // Mock login - always succeeds
-    console.log('Mock login for:', email);
+    try {
+      setLoading(true);
+      const response = await axios.post('/auth/login', {
+        email,
+        password
+      });
+
+      const { token: authToken, user: userData } = response.data;
+      
+      setToken(authToken);
+      setUser(userData);
+      
+      // Save to localStorage
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('authUser', JSON.stringify(userData));
+      
+      // Set axios default header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const register = async (userData: any) => {
-    // Mock register - always succeeds
-    console.log('Mock registration for:', userData.email);
+  const register = async (userData: RegisterData) => {
+    try {
+      setLoading(true);
+      const response = await axios.post('/auth/register', userData);
+
+      const { token: authToken, user: newUser } = response.data;
+      
+      setToken(authToken);
+      setUser(newUser);
+      
+      // Save to localStorage
+      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('authUser', JSON.stringify(newUser));
+      
+      // Set axios default header
+      axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+      
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      throw new Error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = () => {
-    // Mock logout - just log the action
-    console.log('Logout successful');
+    setUser(null);
+    setToken(null);
+    
+    // Clear localStorage
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    
+    // Clear axios default header
+    delete axios.defaults.headers.common['Authorization'];
   };
 
   const value = {
@@ -64,7 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     register,
     logout,
     loading,
-    isAuthenticated: true // Always authenticated in demo mode
+    isAuthenticated: !!user && !!token
   };
 
   return (

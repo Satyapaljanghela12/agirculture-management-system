@@ -38,8 +38,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, setActiveSection }) =>
   ];
 
   const handleLogout = () => {
-    // In demo mode, just show an alert instead of actually logging out
-    alert('This is a demo version. Logout functionality is disabled.');
+    if (window.confirm('Are you sure you want to logout?')) {
+      logout();
+    }
   };
 
   return (
