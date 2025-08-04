@@ -8,11 +8,21 @@ const router = express.Router();
 router.post('/register', async (req, res) => {
   try {
     console.log('Registration attempt:', { email: req.body.email, farmName: req.body.farmName });
+    console.log('Full request body:', req.body);
     
     const { firstName, lastName, email, password, farmName, farmLocation, farmSize, phoneNumber } = req.body;
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password || !farmName || !farmLocation || farmSize === undefined) {
+      console.log('Missing required fields:', {
+        firstName: !!firstName,
+        lastName: !!lastName,
+        email: !!email,
+        password: !!password,
+        farmName: !!farmName,
+        farmLocation: !!farmLocation,
+        farmSize: farmSize !== undefined
+      });
       return res.status(400).json({ 
         message: 'Missing required fields',
         required: ['firstName', 'lastName', 'email', 'password', 'farmName', 'farmLocation', 'farmSize']
@@ -22,12 +32,21 @@ router.post('/register', async (req, res) => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('Invalid email format:', email);
       return res.status(400).json({ message: 'Invalid email format' });
     }
 
     // Validate password length
     if (password.length < 6) {
+      console.log('Password too short:', password.length);
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    // Validate farm size
+    const farmSizeNum = parseFloat(farmSize);
+    if (isNaN(farmSizeNum) || farmSizeNum <= 0) {
+      console.log('Invalid farm size:', farmSize);
+      return res.status(400).json({ message: 'Farm size must be a positive number' });
     }
 
     // Check if user already exists
@@ -45,7 +64,7 @@ router.post('/register', async (req, res) => {
       password,
       farmName: farmName.trim(),
       farmLocation: farmLocation.trim(),
-      farmSize: parseFloat(farmSize),
+      farmSize: farmSizeNum,
       phoneNumber: phoneNumber ? phoneNumber.trim() : undefined
     });
 
@@ -56,6 +75,7 @@ router.post('/register', async (req, res) => {
     // Generate token
     const token = generateToken(user._id);
 
+    console.log('Registration successful for:', user.email);
     res.status(201).json({
       message: 'User registered successfully',
       token,

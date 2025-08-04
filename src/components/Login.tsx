@@ -36,9 +36,25 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
     setLoading(true);
     setError('');
 
+    // Basic validation
+    if (!formData.email.trim()) {
+      setError('Email is required');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.password) {
+      setError('Password is required');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Attempting login...');
       await login(formData.email, formData.password);
+      console.log('Login successful');
     } catch (err: any) {
+      console.error('Login failed:', err);
       setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
@@ -162,8 +178,11 @@ const Login: React.FC<LoginProps> = ({ onSwitchToSignup }) => {
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="text-sm font-medium text-blue-900 mb-2">Demo Credentials</h3>
           <div className="text-sm text-blue-700 space-y-1">
-            <p><strong>Email:</strong> demo@agrimanage.com</p>
-            <p><strong>Password:</strong> demo123</p>
+            <p><strong>Email:</strong> test@example.com</p>
+            <p><strong>Password:</strong> test123</p>
+            <p className="text-xs text-blue-600 mt-2">
+              Or create a new account using the signup form
+            </p>
           </div>
         </div>
       </div>

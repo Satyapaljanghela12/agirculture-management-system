@@ -130,6 +130,7 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
     setError('');
 
     try {
+      console.log('Attempting registration...');
       const userData = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
@@ -141,8 +142,11 @@ const Signup: React.FC<SignupProps> = ({ onSwitchToLogin }) => {
         phoneNumber: formData.phoneNumber.trim() || undefined
       };
 
+      console.log('Registration data:', { ...userData, password: '[HIDDEN]' });
       await register(userData);
+      console.log('Registration successful');
     } catch (err: any) {
+      console.error('Registration failed:', err);
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);

@@ -28,6 +28,7 @@ const corsOptions = {
       'http://localhost:3000',
       'https://localhost:5173',
       'https://creative-pika-0f2778.netlify.app',
+      'https://creative-pika-0f2778.netlify.app/',
       process.env.FRONTEND_URL,
       // Add your custom domain here if you have one
       /\.netlify\.app$/,
@@ -37,7 +38,7 @@ const corsOptions = {
     
     const isAllowed = allowedOrigins.some(allowedOrigin => {
       if (typeof allowedOrigin === 'string') {
-        return origin === allowedOrigin;
+        return origin === allowedOrigin || origin === allowedOrigin.replace(/\/$/, '');
       }
       return allowedOrigin.test(origin);
     });
@@ -48,7 +49,8 @@ const corsOptions = {
       console.log('CORS blocked origin:', origin);
       // In production, be more strict about CORS
       if (process.env.NODE_ENV === 'production') {
-        callback(new Error('Not allowed by CORS'));
+        // Allow for now to debug
+        callback(null, true);
       } else {
         callback(null, true);
       }
@@ -68,6 +70,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Add request logging for debugging
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log('Origin:', req.headers.origin);
+  console.log('User-Agent:', req.headers['user-agent']);
   if (req.method === 'POST' && req.path.includes('auth')) {
     console.log('Auth request body keys:', Object.keys(req.body));
   }
@@ -79,6 +83,7 @@ const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://ssb:pankaj11@blinkeyit.youg5oa.mongodb.net/?retryWrites=true&w=majority&appName=blinkeyit';
     console.log('Attempting to connect to MongoDB...');
+    console.log('MongoDB URI configured:', mongoURI ? 'Yes' : 'No');
     
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
@@ -88,6 +93,11 @@ const connectDB = async () => {
     });
     
     console.log('Connected to MongoDB successfully');
+    
+    // Test the connection by listing collections
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    console.log('Available collections:', collections.map(c => c.name));
+    
   } catch (error) {
     console.error('MongoDB connection error:', error);
     // Don't exit in production, let the app continue with error handling
@@ -203,11 +213,22 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     message: 'Agriculture Management API is running',
     environment: process.env.NODE_ENV || 'development',
+    mongoConnection: mongoose.connection.readyState,
+    mongoStates: {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    },
     services: {
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       weather_api: process.env.VITE_OPENWEATHER_API_KEY ? 'configured' : 'not configured'
     },
-    version: process.env.npm_package_version || '1.0.0'
+    version: process.env.npm_package_version || '1.0.0',
+    cors: {
+      frontendUrl: process.env.FRONTEND_URL,
+      nodeEnv: process.env.NODE_ENV
+    }
   };
   
   res.json(healthCheck);

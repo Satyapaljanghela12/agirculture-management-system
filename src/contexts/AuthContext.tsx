@@ -53,6 +53,35 @@ const getApiUrl = () => {
 // Configure axios defaults
 axios.defaults.baseURL = getApiUrl();
 
+// Add request interceptor for better error handling
+axios.interceptors.request.use(
+  (config) => {
+    console.log('Making request to:', config.baseURL + config.url);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for better error handling
+axios.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('Response error:', error.response?.data || error.message);
+    if (error.response?.status === 401) {
+      // Clear auth data on 401
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('authUser');
+      delete axios.defaults.headers.common['Authorization'];
+    }
+    return Promise.reject(error);
+  }
+);
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -84,12 +113,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
+      console.log('Attempting login with:', { email, apiUrl: getApiUrl() });
+      
       const response = await axios.post('/auth/login', {
         email,
         password
       });
 
+      console.log('Login response:', response.data);
       const { token: authToken, user: userData } = response.data;
+      
+      if (!authToken || !userData) {
+        throw new Error('Invalid response from server');
+      }
       
       setToken(authToken);
       setUser(userData);
@@ -103,7 +139,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
     } catch (error: any) {
       console.error('Login error:', error);
-      const message = error.response?.data?.message || 'Login failed. Please try again.';
+      let message = 'Login failed. Please try again.';
+      
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.message) {
+        message = error.message;
+      } else if (error.code === 'NETWORK_ERROR') {
+        message = 'Network error. Please check your connection and try again.';
+      }
+      
       throw new Error(message);
     } finally {
       setLoading(false);
@@ -113,9 +158,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const register = async (userData: RegisterData) => {
     try {
       setLoading(true);
+      console.log('Attempting registration with:', { 
+        email: userData.email, 
+        farmName: userData.farmName,
+        apiUrl: getApiUrl() 
+      });
+      
       const response = await axios.post('/auth/register', userData);
 
+      console.log('Registration response:', response.data);
       const { token: authToken, user: newUser } = response.data;
+      
+      if (!authToken || !newUser) {
+        throw new Error('Invalid response from server');
+      }
       
       setToken(authToken);
       setUser(newUser);
@@ -129,7 +185,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
     } catch (error: any) {
       console.error('Registration error:', error);
-      const message = error.response?.data?.message || 'Registration failed. Please try again.';
+      let message = 'Registration failed. Please try again.';
+      
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.message) {
+        message = error.message;
+      } else if (error.code === 'NETWORK_ERROR') {
+        message = 'Network error. Please check your connection and try again.';
+      }
+      
       throw new Error(message);
     } finally {
       setLoading(false);
